@@ -36,5 +36,10 @@
     "@eslint/eslintrc": "^3",
     "@types/bcryptjs": "^2.4.6",
     "tsx": "^4.19.1"
-  }
+  },
+  "description": "A full-stack MVP web application where restaurants can hire workers (servers, chefs) for one-day or specific-day shifts. Built with Next.js 15, Prisma, PostgreSQL, and NextAuth.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
