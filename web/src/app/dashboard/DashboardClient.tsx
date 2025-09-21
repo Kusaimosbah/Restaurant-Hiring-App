@@ -26,11 +26,7 @@ interface RecentActivity {
   time: string;
 }
 
-interface DashboardClientProps {
-  session: Session;
-}
-
-export default function DashboardClient({ session }: DashboardClientProps) {
+export default function DashboardClient() {
   const { data: sessionData, status } = useSession();
   const router = useRouter();
   
@@ -58,67 +54,55 @@ export default function DashboardClient({ session }: DashboardClientProps) {
 
   const loadDashboardData = async () => {
     try {
-      // Simulate API calls - replace with actual API calls
-      setTimeout(() => {
-        if (isAdmin) {
-          setStats({
-            totalJobs: 12,
-            activeJobs: 8,
-            totalApplications: 45,
-            pendingApplications: 15,
-            totalWorkers: 23,
-            activeWorkers: 18,
-          });
-          setRecentActivity([
-            {
-              id: '1',
-              type: 'application',
-              message: 'John Doe applied for Kitchen Assistant position',
-              time: '2 hours ago'
-            },
-            {
-              id: '2',
-              type: 'job',
-              message: 'Server position was posted',
-              time: '4 hours ago'
-            },
-            {
-              id: '3',
-              type: 'worker',
-              message: 'Sarah Smith completed onboarding',
-              time: '1 day ago'
-            }
-          ]);
-        } else {
-          setStats({
-            totalJobs: 8,
-            activeJobs: 6,
-            totalApplications: 3,
-            pendingApplications: 1,
-            totalWorkers: 0,
-            activeWorkers: 0,
-          });
-          setRecentActivity([
-            {
-              id: '1',
-              type: 'application',
-              message: 'You applied for Server position',
-              time: '1 day ago'
-            },
-            {
-              id: '2',
-              type: 'application',
-              message: 'Your application for Cook position was approved',
-              time: '3 days ago'
-            }
-          ]);
-        }
-        setLoading(false);
-      }, 1000);
+      setLoading(true);
+      
+      // Fetch dashboard stats
+      const statsResponse = await fetch('/api/dashboard/stats');
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      // Fetch recent activity
+      const activityResponse = await fetch('/api/dashboard/activity');
+      if (activityResponse.ok) {
+        const activityData = await activityResponse.json();
+        setRecentActivity(activityData);
+      }
+
+      setLoading(false);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       setLoading(false);
     }
+  };
+
+  const handleNavigateToJobs = () => {
+    router.push('/dashboard/jobs');
+  };
+
+  const handleNavigateToApplications = () => {
+    router.push('/dashboard/applications');
+  };
+
+  const handleNavigateToWorkers = () => {
+    router.push('/dashboard/workers');
+  };
+
+  const handleNavigateToAnalytics = () => {
+    router.push('/dashboard/analytics');
+  };
+
+  const handleNavigateToProfile = () => {
+    router.push('/dashboard/profile');
+  };
+
+  const handleNavigateToSchedule = () => {
+    router.push('/dashboard/schedule');
+  };
+
+  const handleNavigateToTasks = () => {
+    router.push('/dashboard/tasks');
   };
 
   const StatCard = ({ title, value, subtitle, color = 'blue' }: { 
@@ -193,31 +177,31 @@ export default function DashboardClient({ session }: DashboardClientProps) {
                 <div className="space-y-3">
                   {isAdmin ? (
                     <>
-                      <Button className="w-full justify-start">
+                      <Button onClick={handleNavigateToJobs} className="w-full justify-start">
                         + Post New Job
                       </Button>
-                      <Button variant="secondary" className="w-full justify-start">
+                      <Button onClick={handleNavigateToApplications} variant="secondary" className="w-full justify-start">
                         Review Applications ({stats.pendingApplications})
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button onClick={handleNavigateToWorkers} variant="outline" className="w-full justify-start">
                         Manage Workers
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button onClick={handleNavigateToAnalytics} variant="outline" className="w-full justify-start">
                         View Analytics
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button className="w-full justify-start">
+                      <Button onClick={handleNavigateToJobs} className="w-full justify-start">
                         Browse Jobs ({stats.activeJobs} available)
                       </Button>
-                      <Button variant="secondary" className="w-full justify-start">
+                      <Button onClick={handleNavigateToProfile} variant="secondary" className="w-full justify-start">
                         Update Profile
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button onClick={handleNavigateToApplications} variant="outline" className="w-full justify-start">
                         View My Applications
                       </Button>
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button onClick={handleNavigateToSchedule} variant="outline" className="w-full justify-start">
                         Check Schedule
                       </Button>
                     </>
