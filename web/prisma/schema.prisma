@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  RESTAURANT_OWNER
+  WORKER
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  FILLED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  restaurant    Restaurant?
+  workerProfile WorkerProfile?
+
+  @@map("users")
+}
+
+model Restaurant {
+  id          String  @id @default(cuid())
+  name        String
+  address     String
+  description String?
+  phone       String?
+  email       String?
+
+  // Relations
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String @unique
+
+  jobs                 Job[]
+  applications         Application[]
+  shiftAssignments     ShiftAssignment[]
+  reviewsGiven         ReviewWorker[]
+  reviewsReceived      ReviewRestaurant[]
+  onboardingDocuments  OnboardingDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("restaurants")
+}
+
+model WorkerProfile {
+  id           String   @id @default(cuid())
+  bio          String?
+  experience   String?
+  skills       String[]
+  hourlyRate   Float?
+  availability String?
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  applications        Application[]
+  shiftAssignments    ShiftAssignment[]
+  reviewsGiven        ReviewRestaurant[]
+  reviewsReceived     ReviewWorker[]
+  availabilitySlots   AvailabilitySlot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("worker_profiles")
+}
+
+model Job {
+  id           String    @id @default(cuid())
+  title        String
+  description  String
+  requirements String?
+  hourlyRate   Float
+  startDate    DateTime
+  endDate      DateTime
+  status       JobStatus @default(ACTIVE)
+  maxWorkers   Int       @default(1)
+
+  // Relations
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  applications     Application[]
+  shiftAssignments ShiftAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("jobs")
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  message       String?
+  status        ApplicationStatus @default(PENDING)
+  appliedAt     DateTime          @default(now())
+  respondedAt   DateTime?
+  responseNote  String?
+
+  // Relations
+  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId       String
+  worker      WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workerId    String
+  restaurant  Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  shiftAssignment ShiftAssignment?
+
+  @@unique([jobId, workerId])
+  @@map("applications")
+}
+
+model ShiftAssignment {
+  id           String    @id @default(cuid())
+  startTime    DateTime
+  endTime      DateTime
+  status       String    @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  notes        String?
+
+  // Relations
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String        @unique
+  job           Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId         String
+  worker        WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workerId      String
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("shift_assignments")
+}
+
+model ReviewWorker {
+  id       String @id @default(cuid())
+  rating   Int    // 1-5 stars
+  comment  String?
+  isPublic Boolean @default(true)
+
+  // Relations
+  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workerId     String
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews_worker")
+}
+
+model ReviewRestaurant {
+  id       String @id @default(cuid())
+  rating   Int    // 1-5 stars
+  comment  String?
+  isPublic Boolean @default(true)
+
+  // Relations
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workerId     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reviews_restaurant")
+}
+
+model OnboardingDocument {
+  id           String  @id @default(cuid())
+  name         String
+  documentType String  // "ID", "RESUME", "CERTIFICATION", etc.
+  filePath     String
+  isVerified   Boolean @default(false)
+
+  // Relations
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("onboarding_documents")
+}
+
+model AvailabilitySlot {
+  id        String @id @default(cuid())
+  dayOfWeek Int    // 0-6 (Sunday to Saturday)
+  startTime String // "09:00"
+  endTime   String // "17:00"
+  isActive  Boolean @default(true)
+
+  // Relations
+  worker   WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("availability_slots")
+}
