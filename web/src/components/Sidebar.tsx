@@ -12,6 +12,7 @@ import {
   UserIcon,
   CalendarIcon,
   ClipboardDocumentListIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 
 interface SidebarProps {
@@ -28,6 +29,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
     { name: 'Jobs', href: '/dashboard/jobs', icon: BriefcaseIcon },
     { name: 'Applications', href: '/dashboard/applications', icon: DocumentTextIcon },
     { name: 'Workers', href: '/dashboard/workers', icon: UsersIcon },
+    { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
     { name: 'Analytics', href: '/dashboard/analytics', icon: ChartBarIcon },
     { name: 'Profile', href: '/dashboard/profile', icon: UserIcon },
   ];
@@ -36,6 +38,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Find Jobs', href: '/dashboard/jobs', icon: BriefcaseIcon },
     { name: 'My Applications', href: '/dashboard/applications', icon: DocumentTextIcon },
+    { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
     { name: 'Schedule', href: '/dashboard/schedule', icon: CalendarIcon },
     { name: 'Tasks', href: '/dashboard/tasks', icon: ClipboardDocumentListIcon },
     { name: 'Profile', href: '/dashboard/profile', icon: UserIcon },

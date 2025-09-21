@@ -13,12 +13,15 @@ const updateProfileSchema = z.object({
   restaurantDescription: z.string().optional(),
   restaurantPhone: z.string().optional(),
   restaurantEmail: z.string().optional(),
+  restaurantLogoUrl: z.string().optional(),
   // Worker fields
   bio: z.string().optional(),
   experience: z.string().optional(),
   skills: z.array(z.string()).optional(),
   hourlyRate: z.number().positive().optional(),
-  availability: z.string().optional()
+  availability: z.string().optional(),
+  resumeUrl: z.string().optional(),
+  profilePictureUrl: z.string().optional()
 })
 
 export async function GET() {
@@ -104,7 +107,8 @@ export async function PATCH(request: NextRequest) {
           address: data.restaurantAddress || '',
           description: data.restaurantDescription,
           phone: data.restaurantPhone,
-          email: data.restaurantEmail
+          email: data.restaurantEmail,
+          logoUrl: data.restaurantLogoUrl
         },
         create: {
           name: data.restaurantName || '',
@@ -112,6 +116,7 @@ export async function PATCH(request: NextRequest) {
           description: data.restaurantDescription,
           phone: data.restaurantPhone,
           email: data.restaurantEmail,
+          logoUrl: data.restaurantLogoUrl,
           ownerId: session.user.id
         }
       })
@@ -126,7 +131,9 @@ export async function PATCH(request: NextRequest) {
           experience: data.experience,
           skills: data.skills || [],
           hourlyRate: data.hourlyRate,
-          availability: data.availability
+          availability: data.availability,
+          resumeUrl: data.resumeUrl,
+          profilePictureUrl: data.profilePictureUrl
         },
         create: {
           bio: data.bio,
@@ -134,6 +141,8 @@ export async function PATCH(request: NextRequest) {
           skills: data.skills || [],
           hourlyRate: data.hourlyRate,
           availability: data.availability,
+          resumeUrl: data.resumeUrl,
+          profilePictureUrl: data.profilePictureUrl,
           userId: session.user.id
         }
       })

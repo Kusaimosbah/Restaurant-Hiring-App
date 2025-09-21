@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from './ui/Button';
+import NotificationDropdown from './NotificationDropdown';
 import {
   UserIcon,
   ArrowRightOnRectangleIcon,
@@ -27,6 +28,8 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
           </div>
           
           <div className="flex items-center space-x-4">
+            <NotificationDropdown />
+            
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <UserIcon className="h-5 w-5 text-gray-500" />

@@ -41,6 +41,8 @@ model User {
   // Relations
   restaurant    Restaurant?
   workerProfile WorkerProfile?
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -52,6 +54,7 @@ model Restaurant {
   description String?
   phone       String?
   email       String?
+  logoUrl     String?
 
   // Relations
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -77,6 +80,8 @@ model WorkerProfile {
   skills       String[]
   hourlyRate   Float?
   availability String?
+  resumeUrl    String?
+  profilePictureUrl String?
 
   // Relations
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -125,6 +130,7 @@ model Application {
   appliedAt     DateTime          @default(now())
   respondedAt   DateTime?
   responseNote  String?
+  coverLetterUrl String?
 
   // Relations
   job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
@@ -135,6 +141,7 @@ model Application {
   restaurantId String
 
   shiftAssignment ShiftAssignment?
+  messages        Message[]
 
   @@unique([jobId, workerId])
   @@map("applications")
@@ -231,4 +238,25 @@ model AvailabilitySlot {
   updatedAt DateTime @updatedAt
 
   @@map("availability_slots")
+}
+
+model Message {
+  id       String @id @default(cuid())
+  content  String
+  isRead   Boolean @default(false)
+
+  // Relations
+  sender     User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId   String
+  receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId String
+
+  // Optional relation to application
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  applicationId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
 }

@@ -5,6 +5,7 @@ import { useSession, SessionProvider } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import FileUpload from '@/components/ui/FileUpload';
 import DashboardHeader from '@/components/DashboardHeader';
 import Sidebar from '@/components/Sidebar';
 
@@ -20,6 +21,7 @@ interface UserProfile {
     description?: string;
     phone?: string;
     email?: string;
+    logoUrl?: string;
   };
   workerProfile?: {
     id: string;
@@ -28,6 +30,8 @@ interface UserProfile {
     skills: string[];
     hourlyRate?: number;
     availability?: string;
+    resumeUrl?: string;
+    profilePictureUrl?: string;
   };
 }
 
@@ -54,12 +58,15 @@ function ProfilePageContent() {
     restaurantDescription: '',
     restaurantPhone: '',
     restaurantEmail: '',
+    restaurantLogoUrl: '',
     // Worker fields
     bio: '',
     experience: '',
     skills: [] as string[],
     hourlyRate: 0,
     availability: '',
+    resumeUrl: '',
+    profilePictureUrl: '',
   });
 
   const isAdmin = session?.user?.role === 'RESTAURANT_OWNER';
@@ -87,11 +94,14 @@ function ProfilePageContent() {
           restaurantDescription: data.restaurant?.description || '',
           restaurantPhone: data.restaurant?.phone || '',
           restaurantEmail: data.restaurant?.email || '',
+          restaurantLogoUrl: data.restaurant?.logoUrl || '',
           bio: data.workerProfile?.bio || '',
           experience: data.workerProfile?.experience || '',
           skills: data.workerProfile?.skills || [],
           hourlyRate: data.workerProfile?.hourlyRate || 0,
           availability: data.workerProfile?.availability || '',
+          resumeUrl: data.workerProfile?.resumeUrl || '',
+          profilePictureUrl: data.workerProfile?.profilePictureUrl || '',
         });
       }
       setLoading(false);
@@ -273,6 +283,18 @@ function ProfilePageContent() {
                               onChange={(e) => setFormData({ ...formData, restaurantDescription: e.target.value })}
                             />
                           </div>
+                          
+                          {/* Restaurant Logo Upload */}
+                          <div>
+                            <FileUpload
+                              fileType="profile-picture"
+                              onFileUploaded={(fileUrl, fileName) => 
+                                setFormData({ ...formData, restaurantLogoUrl: fileUrl })
+                              }
+                              currentFile={formData.restaurantLogoUrl}
+                              acceptedFormats="PNG, JPG, WebP up to 5MB"
+                            />
+                          </div>
                         </div>
                       </div>
                     ) : (
@@ -355,6 +377,26 @@ function ProfilePageContent() {
                             <Button type="button" onClick={handleAddSkill} variant="outline" size="sm">
                               + Add Skill
                             </Button>
+                          </div>
+                          
+                          {/* File Uploads for Workers */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FileUpload
+                              fileType="profile-picture"
+                              onFileUploaded={(fileUrl, fileName) => 
+                                setFormData({ ...formData, profilePictureUrl: fileUrl })
+                              }
+                              currentFile={formData.profilePictureUrl}
+                              acceptedFormats="PNG, JPG, WebP up to 5MB"
+                            />
+                            <FileUpload
+                              fileType="resume"
+                              onFileUploaded={(fileUrl, fileName) => 
+                                setFormData({ ...formData, resumeUrl: fileUrl })
+                              }
+                              currentFile={formData.resumeUrl}
+                              acceptedFormats="PDF, DOC, DOCX up to 5MB"
+                            />
                           </div>
                         </div>
                       </div>
