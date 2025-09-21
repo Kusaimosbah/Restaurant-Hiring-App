@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Session } from 'next-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -26,11 +25,7 @@ interface RecentActivity {
   time: string;
 }
 
-interface DashboardClientProps {
-  session: Session;
-}
-
-export default function DashboardClient({ session }: DashboardClientProps) {
+export default function DashboardClient() {
   const { data: sessionData, status } = useSession();
   const router = useRouter();
   
@@ -193,33 +188,49 @@ export default function DashboardClient({ session }: DashboardClientProps) {
                 <div className="space-y-3">
                   {isAdmin ? (
                     <>
-                      <Button className="w-full justify-start">
-                        + Post New Job
-                      </Button>
-                      <Button variant="secondary" className="w-full justify-start">
-                        Review Applications ({stats.pendingApplications})
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        Manage Workers
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        View Analytics
-                      </Button>
+                      <Link href="/dashboard/jobs">
+                        <Button className="w-full justify-start">
+                          + Post New Job
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/applications">
+                        <Button variant="secondary" className="w-full justify-start">
+                          Review Applications ({stats.pendingApplications})
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/workers">
+                        <Button variant="outline" className="w-full justify-start">
+                          Manage Workers
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/analytics">
+                        <Button variant="outline" className="w-full justify-start">
+                          View Analytics
+                        </Button>
+                      </Link>
                     </>
                   ) : (
                     <>
-                      <Button className="w-full justify-start">
-                        Browse Jobs ({stats.activeJobs} available)
-                      </Button>
-                      <Button variant="secondary" className="w-full justify-start">
-                        Update Profile
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        View My Applications
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        Check Schedule
-                      </Button>
+                      <Link href="/dashboard/jobs">
+                        <Button className="w-full justify-start">
+                          Browse Jobs ({stats.activeJobs} available)
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/profile">
+                        <Button variant="secondary" className="w-full justify-start">
+                          Update Profile
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/applications">
+                        <Button variant="outline" className="w-full justify-start">
+                          View My Applications
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/schedule">
+                        <Button variant="outline" className="w-full justify-start">
+                          Check Schedule
+                        </Button>
+                      </Link>
                     </>
                   )}
                 </div>
