@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Session } from 'next-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -29,6 +31,9 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ session }: DashboardClientProps) {
+  const { data: sessionData, status } = useSession();
+  const router = useRouter();
+  
   const [stats, setStats] = useState<DashboardStats>({
     totalJobs: 0,
     activeJobs: 0,
@@ -40,11 +45,16 @@ export default function DashboardClient({ session }: DashboardClientProps) {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = session?.user?.role === 'RESTAURANT_OWNER';
+  const isAdmin = sessionData?.user?.role === 'RESTAURANT_OWNER';
 
   useEffect(() => {
+    if (status === 'loading') return; // Still loading
+    if (!sessionData) {
+      router.push('/auth/signin');
+      return;
+    }
     loadDashboardData();
-  }, []);
+  }, [sessionData, status, router]);
 
   const loadDashboardData = async () => {
     try {
