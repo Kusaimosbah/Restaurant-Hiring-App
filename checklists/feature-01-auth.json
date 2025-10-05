@@ -8,8 +8,8 @@
       "id": "sch",
       "title": "DB schema & migrations",
       "description": "User, RefreshToken, EmailVerificationToken, PasswordResetToken models with proper fields",
-      "done": false,
-      "pr": null,
+      "done": true,
+      "pr": "https://github.com/Kusaimosbah/Restaurant-Hiring-App/pull/new/feat/01-auth/schema-migrations",
       "branch": "feat/01-auth/schema-migrations"
     },
     {
