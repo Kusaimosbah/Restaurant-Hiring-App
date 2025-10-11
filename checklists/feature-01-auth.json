@@ -16,16 +16,16 @@
       "id": "svc", 
       "title": "AuthService flows",
       "description": "Core service methods for signup/login/logout/refresh/verify/reset",
-      "done": false,
-      "pr": null,
+      "done": true,
+      "pr": "https://github.com/Kusaimosbah/Restaurant-Hiring-App/pull/new/feat/01-auth/service-flows",
       "branch": "feat/01-auth/service-flows"
     },
     {
       "id": "tok",
       "title": "Token handling & rotation", 
       "description": "JWT + refresh token implementation with rotation and security",
-      "done": false,
-      "pr": null,
+      "done": true,
+      "pr": "https://github.com/Kusaimosbah/Restaurant-Hiring-App/pull/new/feat/01-auth/token-handling",
       "branch": "feat/01-auth/token-handling"
     },
     {

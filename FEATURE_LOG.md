@@ -11,9 +11,9 @@ Harden and complete authentication for both Restaurant and Worker users with: em
 ### Implementation Progress
 
 #### Phase 1: Foundation & Schema
-- [ ] **PR #001** - Database schema & migrations
-- [ ] **PR #002** - AuthService core flows  
-- [ ] **PR #003** - Token handling & rotation
+- [x] **PR #001** - Database schema & migrations ✅
+- [x] **PR #002** - AuthService core flows ✅
+- [x] **PR #003** - Token handling & rotation ✅
 
 #### Phase 2: Security & Rate Limiting
 - [ ] **PR #004** - Rate limiting & account lockout
