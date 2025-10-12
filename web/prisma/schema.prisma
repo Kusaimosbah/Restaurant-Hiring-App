@@ -76,21 +76,47 @@ model WorkerProfile {
 }
 
 model Job {
-  id               String            @id @default(cuid())
-  title            String
-  description      String
-  requirements     String?
-  hourlyRate       Float
-  startDate        DateTime
-  endDate          DateTime
-  status           JobStatus         @default(ACTIVE)
-  maxWorkers       Int               @default(1)
-  restaurantId     String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  applications     Application[]
-  restaurant       Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  shiftAssignments ShiftAssignment[]
+  id                        String            @id @default(cuid())
+  title                     String
+  description               String
+  requirements              String?
+  jobType                   JobType           @default(SINGLE_SHIFT)
+  skillLevel                SkillLevel        @default(NO_EXPERIENCE)
+  skillRequirements         Json?             // Array of skills with descriptions
+  certificationRequirements String[]          // Required certifications
+  experienceRequired        String?           // Experience description
+  physicalRequirements      String[]          // Physical requirements
+  
+  // Compensation & Benefits
+  hourlyRate                Float
+  benefits                  Json?             // Structured benefits data
+  staffMealsIncluded        Boolean           @default(false)
+  tipsIncluded              Boolean           @default(false)
+  uniformProvided           Boolean           @default(false)
+  parkingAvailable          Boolean           @default(false)
+  transportationAssistance  Boolean           @default(false)
+  
+  // Scheduling
+  startDate                 DateTime
+  endDate                   DateTime
+  shiftStartTime            String?           // HH:MM format
+  shiftEndTime              String?           // HH:MM format
+  workDays                  String[]          // Days of week
+  weeklyHours               Int?              // For weekly/permanent jobs
+  
+  // Location & Details
+  location                  Json?             // Address and coordinates
+  urgency                   JobUrgency        @default(NORMAL)
+  status                    JobStatus         @default(ACTIVE)
+  maxWorkers                Int               @default(1)
+  
+  // Relationships & Metadata
+  restaurantId              String
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  applications              Application[]
+  restaurant                Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  shiftAssignments          ShiftAssignment[]
 
   @@map("jobs")
 }
@@ -257,11 +283,33 @@ enum Role {
   WORKER
 }
 
+enum JobType {
+  SINGLE_SHIFT      // One-time shift
+  WEEKLY_SHORT_TERM // Short-term weekly work
+  PERMANENT         // Long-term position
+}
+
+enum SkillLevel {
+  NO_EXPERIENCE     // Entry level, no experience needed
+  BEGINNER          // Basic skills required
+  INTERMEDIATE      // Some experience needed
+  ADVANCED          // Significant experience required  
+  EXPERT            // Certified professional (sommelier, head chef, etc.)
+}
+
+enum JobUrgency {
+  LOW               // Can wait, flexible timing
+  NORMAL            // Standard hiring timeline
+  HIGH              // Need filled soon
+  URGENT            // Need filled immediately
+}
+
 enum JobStatus {
   DRAFT
   ACTIVE
   FILLED
   CANCELLED
+  EXPIRED
 }
 
 enum ApplicationStatus {
