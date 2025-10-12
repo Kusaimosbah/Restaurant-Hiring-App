@@ -70,7 +70,7 @@ function ApplicationsPageContent() {
             <CardContent className="p-6">
               {applications.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-700 text-lg">
                     {isAdmin ? 'No applications found.' : 'You haven\'t applied to any jobs yet.'}
                   </p>
                   {!isAdmin && (

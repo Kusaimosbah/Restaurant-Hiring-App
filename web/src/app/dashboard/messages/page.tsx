@@ -211,7 +211,7 @@ function MessagesPageContent() {
                           <p className="text-sm text-gray-600 mt-1 truncate">
                             {conversation.lastMessage.content}
                           </p>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-gray-600">
                             {conversation.user.role === 'RESTAURANT_OWNER' ? 'Restaurant Owner' : 'Worker'}
                           </span>
                         </div>
@@ -292,8 +292,8 @@ function MessagesPageContent() {
               </>
             ) : (
               <CardContent className="flex-1 flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="text-center text-gray-600">
+                  <svg className="mx-auto h-12 w-12 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.956 8.956 0 01-4.126-1.047L5 21l1.047-3.874A8.956 8.956 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
                   </svg>
                   <p>Select a conversation to start messaging</p>

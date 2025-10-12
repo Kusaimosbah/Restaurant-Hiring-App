@@ -461,7 +461,7 @@ function CandidatesPageContent() {
           <div className="mb-4">
             <h3 className="text-lg font-medium text-gray-900">
               {selectedJobId ? 'Matched Candidates' : 'All Candidates'} 
-              <span className="text-sm text-gray-500 ml-2">({candidates.length} results)</span>
+              <span className="text-sm text-gray-800 ml-2">({candidates.length} results)</span>
             </h3>
           </div>
 
@@ -482,12 +482,12 @@ function CandidatesPageContent() {
                         </div>
                         <p className="text-sm text-gray-600">{candidate.user?.email || 'No email provided'}</p>
                         {candidate.location && (
-                          <p className="text-sm text-gray-500">📍 {candidate.location}</p>
+                          <p className="text-sm text-gray-700">📍 {candidate.location}</p>
                         )}
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">${candidate.hourlyRateExpected || 0}/hour</p>
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-gray-700">
                           <span>⭐ {candidate.rating ? candidate.rating.toFixed(1) : '0.0'}</span>
                           <span className="ml-2">• {candidate.completedJobs || 0} jobs</span>
                         </div>
@@ -548,7 +548,7 @@ function CandidatesPageContent() {
             ) : (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <p className="text-gray-500">
+                  <p className="text-gray-700">
                     {selectedJobId ? 'No matching candidates found for this job.' : 'No candidates found with current filters.'}
                   </p>
                 </CardContent>
@@ -568,7 +568,7 @@ function CandidatesPageContent() {
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-800">
                   Page {searchFilters.page}
                 </span>
                 <Button 
@@ -593,7 +593,7 @@ function CandidatesPageContent() {
               <h2 className="text-2xl font-bold">Candidate Profile</h2>
               <button 
                 onClick={() => setShowProfileModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-600 hover:text-gray-800"
               >
                 ✕
               </button>
@@ -606,8 +606,8 @@ function CandidatesPageContent() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">{selectedCandidate.user?.name || 'Unknown Candidate'}</h3>
-                  <p className="text-gray-600">{selectedCandidate.user?.email}</p>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <p className="text-gray-700">{selectedCandidate.user?.email}</p>
+                  <div className="flex items-center text-sm text-gray-700">
                     <span>⭐ {selectedCandidate.rating ? selectedCandidate.rating.toFixed(1) : '0.0'}</span>
                     <span className="ml-2">• {selectedCandidate.completedJobs || 0} jobs completed</span>
                   </div>
@@ -687,7 +687,7 @@ function CandidatesPageContent() {
               <h2 className="text-xl font-bold">Contact Candidate</h2>
               <button 
                 onClick={() => setShowContactModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-600 hover:text-gray-800"
               >
                 ✕
               </button>

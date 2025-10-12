@@ -659,14 +659,14 @@ function JobsPageContent() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">{job.restaurant.name} • {job.restaurant.address}</p>
-                        {job.location && <p className="text-sm text-gray-500">Location: {job.location}</p>}
+                        <p className="text-sm text-gray-700">{job.restaurant.name} • {job.restaurant.address}</p>
+                        {job.location && <p className="text-sm text-gray-700">Location: {job.location}</p>}
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">${job.hourlyRate}/hour</p>
-                        <p className="text-sm text-gray-500">{job._count.applications} applications</p>
+                        <p className="text-sm text-gray-700">{job._count.applications} applications</p>
                         {job.skillLevel && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-700">
                             {metadata?.skillLevels.find(s => s.value === job.skillLevel)?.label || job.skillLevel}
                           </p>
                         )}
@@ -790,7 +790,7 @@ function JobsPageContent() {
             ) : (
               <Card>
                 <CardContent className="p-6 text-center">
-                  <p className="text-gray-500">
+                  <p className="text-gray-700">
                     {isAdmin ? 'No jobs posted yet. Create your first job!' : 'No jobs available at the moment.'}
                   </p>
                 </CardContent>

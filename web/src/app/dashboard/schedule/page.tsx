@@ -237,8 +237,8 @@ function SchedulePageContent() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No shifts scheduled yet.</p>
-                  <p className="text-sm text-gray-400 mt-2">
+                  <p className="text-gray-700">No shifts scheduled yet.</p>
+                  <p className="text-sm text-gray-600 mt-2">
                     Apply to jobs to get scheduled for shifts.
                   </p>
                 </div>

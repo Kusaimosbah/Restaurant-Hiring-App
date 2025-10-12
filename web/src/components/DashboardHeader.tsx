@@ -32,13 +32,13 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
             
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
-                <UserIcon className="h-5 w-5 text-gray-500" />
+                <UserIcon className="h-5 w-5 text-gray-600" />
                 <span className="text-sm text-gray-700">
                   {session?.user?.name || session?.user?.email}
                 </span>
               </div>
               <div className="h-6 w-px bg-gray-300" />
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <span className="text-xs text-gray-700 bg-gray-200 px-2 py-1 rounded">
                 {session?.user?.role === 'RESTAURANT_OWNER' ? 'Admin' : 'Worker'}
               </span>
             </div>

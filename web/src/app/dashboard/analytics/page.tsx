@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { DashboardHeader } from '@/components/DashboardHeader';
-import { Sidebar } from '@/components/Sidebar';
+import DashboardHeader from '@/components/DashboardHeader';
+import Sidebar from '@/components/Sidebar';
 
 interface JobAnalytics {
   totalJobs: number;
@@ -111,7 +111,7 @@ export default function AnalyticsPage() {
           <div className="p-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">Only restaurant owners can access analytics.</p>
+                <p className="text-gray-700">Only restaurant owners can access analytics.</p>
               </CardContent>
             </Card>
           </div>
@@ -137,7 +137,7 @@ export default function AnalyticsPage() {
               className={`pb-4 px-2 font-medium transition-colors ${
                 activeTab === 'jobs'
                   ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-700 hover:text-gray-900'
               }`}
             >
               Job Analytics
@@ -147,7 +147,7 @@ export default function AnalyticsPage() {
               className={`pb-4 px-2 font-medium transition-colors ${
                 activeTab === 'applications'
                   ? 'text-blue-600 border-b-2 border-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-700 hover:text-gray-900'
               }`}
             >
               Application Analytics
@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
                         <div key={index} className="p-4 border border-gray-200 rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-gray-900">{item.location}</span>
-                            <span className="text-sm text-gray-500">{item.jobCount} jobs</span>
+                            <span className="text-sm text-gray-700">{item.jobCount} jobs</span>
                           </div>
                           <p className="text-sm text-gray-600 mt-1">Avg Rate: ${item.avgRate}/hour</p>
                         </div>
@@ -306,7 +306,7 @@ export default function AnalyticsPage() {
                         <div key={index} className="p-4 border border-gray-200 rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className="font-medium text-gray-900">{item.urgency}</span>
-                            <span className="text-sm text-gray-500">{item.count} jobs</span>
+                            <span className="text-sm text-gray-700">{item.count} jobs</span>
                           </div>
                           <p className="text-sm text-gray-600 mt-1">Avg Fill Time: {item.avgFillTime} days</p>
                         </div>

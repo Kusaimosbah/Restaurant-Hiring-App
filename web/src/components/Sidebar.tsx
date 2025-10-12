@@ -51,7 +51,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
     <div className={`bg-gray-900 text-white w-64 min-h-screen ${className}`}>
       <div className="p-6">
         <h1 className="text-xl font-bold">Restaurant Hiring</h1>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-gray-300 text-sm mt-1">
           {isAdmin ? 'Admin Panel' : 'Worker Portal'}
         </p>
       </div>
