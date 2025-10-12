@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant API Tester</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .endpoint-section {
+      margin-bottom: 30px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .endpoint-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .method {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.8em;
+      margin-right: 8px;
+    }
+    .get { background-color: #61affe; color: white; }
+    .post { background-color: #49cc90; color: white; }
+    .put { background-color: #fca130; color: white; }
+    .delete { background-color: #f93e3e; color: white; }
+    
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 100px;
+      font-family: monospace;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .response {
+      margin-top: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      overflow-x: auto;
+    }
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .status.success { color: #4CAF50; }
+    .status.error { color: #f44336; }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>Restaurant API Tester</h1>
+  <p>This page allows you to test the Restaurant Profile Management API endpoints. You must be logged in as a restaurant owner for these to work.</p>
+  
+  <!-- Profile Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Restaurant Profile</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method put">PUT</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <button id="getProfile">Get Profile</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="profileData">Update Profile (JSON):</label>
+      <textarea id="profileData">{
+  "name": "The Golden Fork",
+  "description": "Fine dining restaurant specializing in contemporary cuisine",
+  "phone": "+1-555-0123",
+  "email": "info@goldenfork.com",
+  "businessType": "FINE_DINING",
+  "cuisineType": "AMERICAN",
+  "websiteUrl": "https://thegoldenfork.com"
+}</textarea>
+      <button id="updateProfile">Update Profile</button>
+    </div>
+    
+    <div class="status" id="profileStatus"></div>
+    <div class="response">
+      <pre id="profileResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Address Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Restaurant Address</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method put">PUT</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <button id="getAddress">Get Address</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="addressData">Update Address (JSON):</label>
+      <textarea id="addressData">{
+  "street": "123 Main Street",
+  "city": "San Francisco",
+  "state": "CA",
+  "zipCode": "94102",
+  "country": "United States",
+  "latitude": 37.7749,
+  "longitude": -122.4194
+}</textarea>
+      <button id="updateAddress">Update Address</button>
+    </div>
+    
+    <div class="status" id="addressStatus"></div>
+    <div class="response">
+      <pre id="addressResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Locations Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Restaurant Locations</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method post">POST</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <button id="getLocations">Get All Locations</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="locationData">Add New Location (JSON):</label>
+      <textarea id="locationData">{
+  "name": "New Test Location",
+  "street": "456 Test Street",
+  "city": "San Francisco",
+  "state": "CA",
+  "zipCode": "94103",
+  "country": "United States",
+  "phone": "+1-555-0456",
+  "email": "test@goldenfork.com",
+  "isMainLocation": false
+}</textarea>
+      <button id="addLocation">Add Location</button>
+    </div>
+    
+    <div class="status" id="locationsStatus"></div>
+    <div class="response">
+      <pre id="locationsResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Single Location Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Single Location</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method put">PUT</span>
+        <span class="method delete">DELETE</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="locationId">Location ID:</label>
+      <input type="text" id="locationId" placeholder="Enter location ID">
+      <button id="getLocation">Get Location</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="updateLocationData">Update Location (JSON):</label>
+      <textarea id="updateLocationData">{
+  "name": "Updated Location",
+  "street": "789 Updated Street",
+  "city": "San Francisco",
+  "state": "CA",
+  "zipCode": "94104",
+  "country": "United States",
+  "phone": "+1-555-0789",
+  "email": "updated@goldenfork.com",
+  "isMainLocation": false
+}</textarea>
+      <button id="updateLocation">Update Location</button>
+    </div>
+    
+    <div class="input-group">
+      <button id="deleteLocation">Delete Location</button>
+    </div>
+    
+    <div class="status" id="locationStatus"></div>
+    <div class="response">
+      <pre id="locationResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Photos Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Restaurant Photos</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method post">POST</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <button id="getPhotos">Get All Photos</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="photoData">Add New Photo (JSON):</label>
+      <textarea id="photoData">{
+  "url": "https://example.com/photos/new-photo.jpg",
+  "caption": "New test photo",
+  "sortOrder": 10,
+  "type": "INTERIOR"
+}</textarea>
+      <button id="addPhoto">Add Photo</button>
+    </div>
+    
+    <div class="status" id="photosStatus"></div>
+    <div class="response">
+      <pre id="photosResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Single Photo Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Single Photo</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method put">PUT</span>
+        <span class="method delete">DELETE</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="photoId">Photo ID:</label>
+      <input type="text" id="photoId" placeholder="Enter photo ID">
+      <button id="getPhoto">Get Photo</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="updatePhotoData">Update Photo (JSON):</label>
+      <textarea id="updatePhotoData">{
+  "url": "https://example.com/photos/updated-photo.jpg",
+  "caption": "Updated test photo",
+  "sortOrder": 20,
+  "type": "EXTERIOR"
+}</textarea>
+      <button id="updatePhoto">Update Photo</button>
+    </div>
+    
+    <div class="input-group">
+      <button id="deletePhoto">Delete Photo</button>
+    </div>
+    
+    <div class="status" id="photoStatus"></div>
+    <div class="response">
+      <pre id="photoResponse"></pre>
+    </div>
+  </div>
+  
+  <!-- Payment Endpoint -->
+  <div class="endpoint-section">
+    <div class="endpoint-title">
+      <h2>Payment Information</h2>
+      <div>
+        <span class="method get">GET</span>
+        <span class="method put">PUT</span>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <button id="getPayment">Get Payment Info</button>
+    </div>
+    
+    <div class="input-group">
+      <label for="paymentData">Update Payment Info (JSON):</label>
+      <textarea id="paymentData">{
+  "stripeCustomerId": "cus_test12345",
+  "stripeAccountId": "acct_test12345",
+  "bankAccountLast4": "6789",
+  "cardLast4": "4242",
+  "isVerified": true
+}</textarea>
+      <button id="updatePayment">Update Payment Info</button>
+    </div>
+    
+    <div class="status" id="paymentStatus"></div>
+    <div class="response">
+      <pre id="paymentResponse"></pre>
+    </div>
+  </div>
+
+  <script>
+    // Base URL for API endpoints
+    const BASE_URL = '/api/restaurant';
+    
+    // Helper function to make API requests
+    async function makeRequest(url, method = 'GET', data = null) {
+      const options = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+      };
+
+      if (data && (method === 'POST' || method === 'PUT')) {
+        options.body = JSON.stringify(data);
+      }
+
+      try {
+        const response = await fetch(url, options);
+        const responseData = await response.json();
+        
+        return { 
+          status: response.status, 
+          ok: response.ok,
+          data: responseData 
+        };
+      } catch (error) {
+        console.error(`Error making ${method} request to ${url}:`, error);
+        return { 
+          status: 500, 
+          ok: false,
+          data: { error: error.message } 
+        };
+      }
+    }
+    
+    // Helper function to update status and response elements
+    function updateUI(statusElement, responseElement, response) {
+      statusElement.textContent = `Status: ${response.status} ${response.ok ? 'Success' : 'Error'}`;
+      statusElement.className = response.ok ? 'status success' : 'status error';
+      responseElement.textContent = JSON.stringify(response.data, null, 2);
+    }
+    
+    // Profile Endpoints
+    document.getElementById('getProfile').addEventListener('click', async () => {
+      const response = await makeRequest(`${BASE_URL}/profile`);
+      updateUI(
+        document.getElementById('profileStatus'),
+        document.getElementById('profileResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('updateProfile').addEventListener('click', async () => {
+      try {
+        const data = JSON.parse(document.getElementById('profileData').value);
+        const response = await makeRequest(`${BASE_URL}/profile`, 'PUT', data);
+        updateUI(
+          document.getElementById('profileStatus'),
+          document.getElementById('profileResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('profileStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('profileStatus').className = 'status error';
+      }
+    });
+    
+    // Address Endpoints
+    document.getElementById('getAddress').addEventListener('click', async () => {
+      const response = await makeRequest(`${BASE_URL}/address`);
+      updateUI(
+        document.getElementById('addressStatus'),
+        document.getElementById('addressResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('updateAddress').addEventListener('click', async () => {
+      try {
+        const data = JSON.parse(document.getElementById('addressData').value);
+        const response = await makeRequest(`${BASE_URL}/address`, 'PUT', data);
+        updateUI(
+          document.getElementById('addressStatus'),
+          document.getElementById('addressResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('addressStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('addressStatus').className = 'status error';
+      }
+    });
+    
+    // Locations Endpoints
+    document.getElementById('getLocations').addEventListener('click', async () => {
+      const response = await makeRequest(`${BASE_URL}/locations`);
+      updateUI(
+        document.getElementById('locationsStatus'),
+        document.getElementById('locationsResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('addLocation').addEventListener('click', async () => {
+      try {
+        const data = JSON.parse(document.getElementById('locationData').value);
+        const response = await makeRequest(`${BASE_URL}/locations`, 'POST', data);
+        updateUI(
+          document.getElementById('locationsStatus'),
+          document.getElementById('locationsResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('locationsStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('locationsStatus').className = 'status error';
+      }
+    });
+    
+    // Single Location Endpoints
+    document.getElementById('getLocation').addEventListener('click', async () => {
+      const locationId = document.getElementById('locationId').value;
+      if (!locationId) {
+        document.getElementById('locationStatus').textContent = 'Error: Location ID is required';
+        document.getElementById('locationStatus').className = 'status error';
+        return;
+      }
+      
+      const response = await makeRequest(`${BASE_URL}/locations/${locationId}`);
+      updateUI(
+        document.getElementById('locationStatus'),
+        document.getElementById('locationResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('updateLocation').addEventListener('click', async () => {
+      try {
+        const locationId = document.getElementById('locationId').value;
+        if (!locationId) {
+          document.getElementById('locationStatus').textContent = 'Error: Location ID is required';
+          document.getElementById('locationStatus').className = 'status error';
+          return;
+        }
+        
+        const data = JSON.parse(document.getElementById('updateLocationData').value);
+        const response = await makeRequest(`${BASE_URL}/locations/${locationId}`, 'PUT', data);
+        updateUI(
+          document.getElementById('locationStatus'),
+          document.getElementById('locationResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('locationStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('locationStatus').className = 'status error';
+      }
+    });
+    
+    document.getElementById('deleteLocation').addEventListener('click', async () => {
+      const locationId = document.getElementById('locationId').value;
+      if (!locationId) {
+        document.getElementById('locationStatus').textContent = 'Error: Location ID is required';
+        document.getElementById('locationStatus').className = 'status error';
+        return;
+      }
+      
+      if (!confirm('Are you sure you want to delete this location?')) {
+        return;
+      }
+      
+      const response = await makeRequest(`${BASE_URL}/locations/${locationId}`, 'DELETE');
+      updateUI(
+        document.getElementById('locationStatus'),
+        document.getElementById('locationResponse'),
+        response
+      );
+    });
+    
+    // Photos Endpoints
+    document.getElementById('getPhotos').addEventListener('click', async () => {
+      const response = await makeRequest(`${BASE_URL}/photos`);
+      updateUI(
+        document.getElementById('photosStatus'),
+        document.getElementById('photosResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('addPhoto').addEventListener('click', async () => {
+      try {
+        const data = JSON.parse(document.getElementById('photoData').value);
+        const response = await makeRequest(`${BASE_URL}/photos`, 'POST', data);
+        updateUI(
+          document.getElementById('photosStatus'),
+          document.getElementById('photosResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('photosStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('photosStatus').className = 'status error';
+      }
+    });
+    
+    // Single Photo Endpoints
+    document.getElementById('getPhoto').addEventListener('click', async () => {
+      const photoId = document.getElementById('photoId').value;
+      if (!photoId) {
+        document.getElementById('photoStatus').textContent = 'Error: Photo ID is required';
+        document.getElementById('photoStatus').className = 'status error';
+        return;
+      }
+      
+      const response = await makeRequest(`${BASE_URL}/photos/${photoId}`);
+      updateUI(
+        document.getElementById('photoStatus'),
+        document.getElementById('photoResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('updatePhoto').addEventListener('click', async () => {
+      try {
+        const photoId = document.getElementById('photoId').value;
+        if (!photoId) {
+          document.getElementById('photoStatus').textContent = 'Error: Photo ID is required';
+          document.getElementById('photoStatus').className = 'status error';
+          return;
+        }
+        
+        const data = JSON.parse(document.getElementById('updatePhotoData').value);
+        const response = await makeRequest(`${BASE_URL}/photos/${photoId}`, 'PUT', data);
+        updateUI(
+          document.getElementById('photoStatus'),
+          document.getElementById('photoResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('photoStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('photoStatus').className = 'status error';
+      }
+    });
+    
+    document.getElementById('deletePhoto').addEventListener('click', async () => {
+      const photoId = document.getElementById('photoId').value;
+      if (!photoId) {
+        document.getElementById('photoStatus').textContent = 'Error: Photo ID is required';
+        document.getElementById('photoStatus').className = 'status error';
+        return;
+      }
+      
+      if (!confirm('Are you sure you want to delete this photo?')) {
+        return;
+      }
+      
+      const response = await makeRequest(`${BASE_URL}/photos/${photoId}`, 'DELETE');
+      updateUI(
+        document.getElementById('photoStatus'),
+        document.getElementById('photoResponse'),
+        response
+      );
+    });
+    
+    // Payment Endpoints
+    document.getElementById('getPayment').addEventListener('click', async () => {
+      const response = await makeRequest(`${BASE_URL}/payment`);
+      updateUI(
+        document.getElementById('paymentStatus'),
+        document.getElementById('paymentResponse'),
+        response
+      );
+    });
+    
+    document.getElementById('updatePayment').addEventListener('click', async () => {
+      try {
+        const data = JSON.parse(document.getElementById('paymentData').value);
+        const response = await makeRequest(`${BASE_URL}/payment`, 'PUT', data);
+        updateUI(
+          document.getElementById('paymentStatus'),
+          document.getElementById('paymentResponse'),
+          response
+        );
+      } catch (error) {
+        document.getElementById('paymentStatus').textContent = `Error: ${error.message}`;
+        document.getElementById('paymentStatus').className = 'status error';
+      }
+    });
+  </script>
+</body>
+</html>
