@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { prisma } from '../prisma'
+import { emailService } from './emailService'
 
 // Define types based on our schema
 type Role = 'RESTAURANT_OWNER' | 'WORKER'
@@ -319,8 +320,17 @@ export class AuthService {
       }
     })
 
-    // TODO: Send password reset email
-    console.log(`Password reset token for ${email}: ${resetToken}`)
+    // Send password reset email
+    try {
+      await emailService.sendPasswordResetEmail(email, resetToken)
+      console.log(`✅ Password reset email sent to ${email}`)
+    } catch (error) {
+      console.error(`❌ Failed to send password reset email to ${email}:`, error)
+      // For development, still log the token
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔧 Password reset token for ${email}: ${resetToken}`)
+      }
+    }
   }
 
   /**
