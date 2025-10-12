@@ -10,7 +10,7 @@ const addressSchema = z.object({
   city: z.string().min(2, 'City must be at least 2 characters').max(100),
   state: z.string().min(2, 'State must be at least 2 characters').max(100),
   zipCode: z.string().min(2, 'Zip code must be at least 2 characters').max(20),
-  country: z.string().default('United States').max(100),
+  country: z.string().max(100).default('United States'),
   latitude: z.number().optional().nullable(),
   longitude: z.number().optional().nullable(),
 })
