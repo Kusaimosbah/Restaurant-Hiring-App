@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,251 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
+  password                String
+  name                    String
+  role                    Role
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  emailVerifiedAt         DateTime?
+  failedLoginCount        Int                      @default(0)
+  lastLoginAt             DateTime?
+  lockedUntil             DateTime?
+  phone                   String?
+  emailVerificationTokens EmailVerificationToken[]
+  receivedMessages        Message[]                @relation("ReceivedMessages")
+  sentMessages            Message[]                @relation("SentMessages")
+  passwordResetTokens     PasswordResetToken[]
+  refreshTokens           RefreshToken[]
+  restaurant              Restaurant?
+  workerProfile           WorkerProfile?
+
+  @@map("users")
+}
+
+model Restaurant {
+  id                  String               @id @default(cuid())
+  name                String
+  address             String
+  description         String?
+  phone               String?
+  email               String?
+  ownerId             String               @unique
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  logoUrl             String?
+  applications        Application[]
+  jobs                Job[]
+  onboardingDocuments OnboardingDocument[]
+  owner               User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reviewsReceived     ReviewRestaurant[]
+  reviewsGiven        ReviewWorker[]
+  shiftAssignments    ShiftAssignment[]
+
+  @@map("restaurants")
+}
+
+model WorkerProfile {
+  id                String             @id @default(cuid())
+  bio               String?
+  experience        String?
+  skills            String[]
+  hourlyRate        Float?
+  availability      String?
+  userId            String             @unique
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  profilePictureUrl String?
+  resumeUrl         String?
+  applications      Application[]
+  availabilitySlots AvailabilitySlot[]
+  reviewsGiven      ReviewRestaurant[]
+  reviewsReceived   ReviewWorker[]
+  shiftAssignments  ShiftAssignment[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("worker_profiles")
+}
+
+model Job {
+  id               String            @id @default(cuid())
+  title            String
+  description      String
+  requirements     String?
+  hourlyRate       Float
+  startDate        DateTime
+  endDate          DateTime
+  status           JobStatus         @default(ACTIVE)
+  maxWorkers       Int               @default(1)
+  restaurantId     String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  applications     Application[]
+  restaurant       Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  shiftAssignments ShiftAssignment[]
+
+  @@map("jobs")
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  message         String?
+  status          ApplicationStatus @default(PENDING)
+  appliedAt       DateTime          @default(now())
+  respondedAt     DateTime?
+  responseNote    String?
+  jobId           String
+  workerId        String
+  restaurantId    String
+  coverLetterUrl  String?
+  job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  restaurant      Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  worker          WorkerProfile     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  messages        Message[]
+  shiftAssignment ShiftAssignment?
+
+  @@unique([jobId, workerId])
+  @@map("applications")
+}
+
+model ShiftAssignment {
+  id            String        @id @default(cuid())
+  startTime     DateTime
+  endTime       DateTime
+  status        String        @default("SCHEDULED")
+  notes         String?
+  applicationId String        @unique
+  jobId         String
+  workerId      String
+  restaurantId  String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  job           Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  worker        WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("shift_assignments")
+}
+
+model ReviewWorker {
+  id           String        @id @default(cuid())
+  rating       Int
+  comment      String?
+  isPublic     Boolean       @default(true)
+  workerId     String
+  restaurantId String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("reviews_worker")
+}
+
+model ReviewRestaurant {
+  id           String        @id @default(cuid())
+  rating       Int
+  comment      String?
+  isPublic     Boolean       @default(true)
+  restaurantId String
+  workerId     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("reviews_restaurant")
+}
+
+model OnboardingDocument {
+  id           String     @id @default(cuid())
+  name         String
+  documentType String
+  filePath     String
+  isVerified   Boolean    @default(false)
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_documents")
+}
+
+model AvailabilitySlot {
+  id        String        @id @default(cuid())
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean       @default(true)
+  workerId  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  worker    WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("availability_slots")
+}
+
+model Message {
+  id            String       @id @default(cuid())
+  content       String
+  isRead        Boolean      @default(false)
+  senderId      String
+  receiverId    String
+  applicationId String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  application   Application? @relation(fields: [applicationId], references: [id])
+  receiver      User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender        User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  expiresAt DateTime
+  revoked   Boolean   @default(false)
+  revokedAt DateTime?
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  expiresAt DateTime
+  used      Boolean   @default(false)
+  usedAt    DateTime?
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 enum Role {
@@ -27,300 +269,4 @@ enum ApplicationStatus {
   ACCEPTED
   REJECTED
   WITHDRAWN
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   // Hashed with argon2id
-  name      String
-  role      Role
-  phone     String?
-  
-  // Email verification
-  emailVerifiedAt DateTime?
-  
-  // Account security
-  failedLoginCount Int @default(0)
-  lockedUntil      DateTime?
-  lastLoginAt      DateTime?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  restaurant           Restaurant?
-  workerProfile        WorkerProfile?
-  sentMessages         Message[] @relation("SentMessages")
-  receivedMessages     Message[] @relation("ReceivedMessages")
-  refreshTokens        RefreshToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  passwordResetTokens  PasswordResetToken[]
-
-  @@map("users")
-}
-
-model Restaurant {
-  id          String  @id @default(cuid())
-  name        String
-  address     String
-  description String?
-  phone       String?
-  email       String?
-  logoUrl     String?
-
-  // Relations
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId String @unique
-
-  jobs                 Job[]
-  applications         Application[]
-  shiftAssignments     ShiftAssignment[]
-  reviewsGiven         ReviewWorker[]
-  reviewsReceived      ReviewRestaurant[]
-  onboardingDocuments  OnboardingDocument[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("restaurants")
-}
-
-model WorkerProfile {
-  id           String   @id @default(cuid())
-  bio          String?
-  experience   String?
-  skills       String[]
-  hourlyRate   Float?
-  availability String?
-  resumeUrl    String?
-  profilePictureUrl String?
-
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String @unique
-
-  applications        Application[]
-  shiftAssignments    ShiftAssignment[]
-  reviewsGiven        ReviewRestaurant[]
-  reviewsReceived     ReviewWorker[]
-  availabilitySlots   AvailabilitySlot[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("worker_profiles")
-}
-
-model Job {
-  id           String    @id @default(cuid())
-  title        String
-  description  String
-  requirements String?
-  hourlyRate   Float
-  startDate    DateTime
-  endDate      DateTime
-  status       JobStatus @default(ACTIVE)
-  maxWorkers   Int       @default(1)
-
-  // Relations
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  applications     Application[]
-  shiftAssignments ShiftAssignment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("jobs")
-}
-
-model Application {
-  id            String            @id @default(cuid())
-  message       String?
-  status        ApplicationStatus @default(PENDING)
-  appliedAt     DateTime          @default(now())
-  respondedAt   DateTime?
-  responseNote  String?
-  coverLetterUrl String?
-
-  // Relations
-  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId       String
-  worker      WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  workerId    String
-  restaurant  Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  shiftAssignment ShiftAssignment?
-  messages        Message[]
-
-  @@unique([jobId, workerId])
-  @@map("applications")
-}
-
-model ShiftAssignment {
-  id           String    @id @default(cuid())
-  startTime    DateTime
-  endTime      DateTime
-  status       String    @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
-  notes        String?
-
-  // Relations
-  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  applicationId String        @unique
-  job           Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobId         String
-  worker        WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  workerId      String
-  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("shift_assignments")
-}
-
-model ReviewWorker {
-  id       String @id @default(cuid())
-  rating   Int    // 1-5 stars
-  comment  String?
-  isPublic Boolean @default(true)
-
-  // Relations
-  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  workerId     String
-  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("reviews_worker")
-}
-
-model ReviewRestaurant {
-  id       String @id @default(cuid())
-  rating   Int    // 1-5 stars
-  comment  String?
-  isPublic Boolean @default(true)
-
-  // Relations
-  restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  worker       WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  workerId     String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("reviews_restaurant")
-}
-
-model OnboardingDocument {
-  id           String  @id @default(cuid())
-  name         String
-  documentType String  // "ID", "RESUME", "CERTIFICATION", etc.
-  filePath     String
-  isVerified   Boolean @default(false)
-
-  // Relations
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("onboarding_documents")
-}
-
-model AvailabilitySlot {
-  id        String @id @default(cuid())
-  dayOfWeek Int    // 0-6 (Sunday to Saturday)
-  startTime String // "09:00"
-  endTime   String // "17:00"
-  isActive  Boolean @default(true)
-
-  // Relations
-  worker   WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  workerId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("availability_slots")
-}
-
-model Message {
-  id       String @id @default(cuid())
-  content  String
-  isRead   Boolean @default(false)
-
-  // Relations
-  sender     User   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  senderId   String
-  receiver   User   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  receiverId String
-
-  // Optional relation to application
-  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
-  applicationId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("messages")
-}
-
-model RefreshToken {
-  id          String   @id @default(cuid())
-  token       String   @unique
-  expiresAt   DateTime
-  revoked     Boolean  @default(false)
-  revokedAt   DateTime?
-  
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("refresh_tokens")
-}
-
-model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  usedAt    DateTime?
-  
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("email_verification_tokens")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  usedAt    DateTime?
-  
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("password_reset_tokens")
 }

@@ -1,16 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function SignInPage() {
+function SignInForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const urlMessage = searchParams.get('message')
+    if (urlMessage) {
+      setMessage(urlMessage)
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,6 +63,12 @@ export default function SignInPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
               {error}
+            </div>
+          )}
+          
+          {message && (
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+              {message}
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">
@@ -100,8 +115,25 @@ export default function SignInPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
+
+          <div className="text-center">
+            <Link 
+              href="/auth/forgot-password" 
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </form>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   )
 }

@@ -4,6 +4,7 @@ postgres_data/
 # Environment files
 .env
 .env.local
+web/.env
 
 # IDE files
 .vscode/
