@@ -27,6 +27,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   const adminNavItems = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Jobs', href: '/dashboard/jobs', icon: BriefcaseIcon },
+    { name: 'Candidates', href: '/dashboard/candidates', icon: UsersIcon },
     { name: 'Applications', href: '/dashboard/applications', icon: DocumentTextIcon },
     { name: 'Workers', href: '/dashboard/workers', icon: UsersIcon },
     { name: 'Messages', href: '/dashboard/messages', icon: ChatBubbleLeftRightIcon },
