@@ -1,6 +1,17 @@
 # Restaurant Hiring App 🍽️
 
-A full-stack MVP web application where restaurants can hire workers (servers, chefs) for one-day or specific-day shifts.
+A comprehensive hospitality staffing platform connecting restaurants and coffee shops with short-term and long-term staff. Features advanced job matching, skills-based hiring, and seamless mobile experience for job seekers.
+
+## 📋 **Current Status**
+✅ **Authentication System Complete** - Registration, login, password reset with email functionality  
+✅ **Database Schema & Migrations** - Full user management and job posting foundation  
+✅ **Email Service Integration** - Professional email templates with Ethereal.email testing  
+✅ **Project Documentation** - Comprehensive roadmap and collaboration guides  
+🚧 **In Development** - Job posting system and profile management
+
+## 📚 **Documentation**
+- **[📋 PROJECT_ROADMAP.md](./PROJECT_ROADMAP.md)** - Complete feature specifications with user stories
+- **[🤝 COLLABORATION_GUIDE.md](./COLLABORATION_GUIDE.md)** - Developer collaboration workflows and task assignments
 
 ## 📁 Project Structure
 
