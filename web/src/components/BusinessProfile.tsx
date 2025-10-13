@@ -228,6 +228,9 @@ export default function BusinessProfile() {
                   }}
                   onSubmit={handleSaveBusinessDetails}
                   isLoading={isSaving}
+                  onCancel={() => {
+                    alert('Changes cancelled');
+                  }}
                 />
               </Tab.Panel>
               
@@ -250,6 +253,9 @@ export default function BusinessProfile() {
                   initialData={profileData.restaurant?.address || {}}
                   onSubmit={handleSaveAddress}
                   isLoading={isSaving}
+                  onCancel={() => {
+                    alert('Changes cancelled');
+                  }}
                 />
               </Tab.Panel>
               
