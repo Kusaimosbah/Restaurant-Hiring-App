@@ -46,22 +46,48 @@ label {
 }
 
 /* Make headings more visible */
-h1, h2, h3, h4, h5, h6 {
+h1:not(.business-profile-container h1),
+h2:not(.business-profile-container h2),
+h3:not(.business-profile-container h3),
+h4:not(.business-profile-container h4),
+h5:not(.business-profile-container h5),
+h6:not(.business-profile-container h6) {
   color: #000000 !important;
 }
 
 /* Override Tailwind text colors to black */
-.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500 {
+.text-gray-900:not(.business-profile-container *),
+.text-gray-800:not(.business-profile-container *),
+.text-gray-700:not(.business-profile-container *),
+.text-gray-600:not(.business-profile-container *),
+.text-gray-500:not(.business-profile-container *) {
   color: #000000 !important;
 }
 
 /* Force black text in Business Profile */
-.container h1, .container h2, .container h3, .container p {
+.container h1:not(.business-profile-container h1),
+.container h2:not(.business-profile-container h2),
+.container h3:not(.business-profile-container h3),
+.container p:not(.business-profile-container p) {
   color: #000000 !important;
 }
 
 /* FORCE ALL TEXT TO BE BLACK - NO EXCEPTIONS */
-body, p, h1, h2, h3, h4, h5, h6, span, div, label, input, select, textarea, button {
+body:not(.business-profile-container),
+p:not(.business-profile-container p),
+h1:not(.business-profile-container h1),
+h2:not(.business-profile-container h2),
+h3:not(.business-profile-container h3),
+h4:not(.business-profile-container h4),
+h5:not(.business-profile-container h5),
+h6:not(.business-profile-container h6),
+span:not(.business-profile-container span),
+div:not(.business-profile-container),
+label:not(.business-profile-container label),
+input:not(.business-profile-container input),
+select:not(.business-profile-container select),
+textarea:not(.business-profile-container textarea),
+button:not(.business-profile-container button) {
   color: #000000 !important;
 }
 
@@ -109,7 +135,9 @@ textarea:not(.business-profile-container) {
 }
 
 /* Override any Tailwind color classes */
-[class*="text-gray"], [class*="text-white"], [class*="text-black"] {
+[class*="text-gray"]:not(.business-profile-container *):not(.business-profile-container),
+[class*="text-white"]:not(.business-profile-container *):not(.business-profile-container),
+[class*="text-black"]:not(.business-profile-container *):not(.business-profile-container) {
   color: #000000 !important;
 }
 
@@ -117,6 +145,11 @@ textarea:not(.business-profile-container) {
 h2:not(.business-profile-container h1):not(.business-profile-container h2),
 .signin-heading, .auth-container h2, .auth-container p, .text-center {
   color: #000000 !important;
+}
+
+/* Ensure Business Profile heading stays gray */
+.business-profile-container h1 {
+  color: #6b7280 !important;
 }
 
 /* Allow gray colors in sidebar */

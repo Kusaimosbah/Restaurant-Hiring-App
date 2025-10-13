@@ -176,7 +176,7 @@ export default function BusinessProfile() {
           </svg>
           Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold" style={{color: '#6b7280 !important'}}>Business Profile</h1>
+        <h1 className="text-3xl font-bold" style={{color: '#6b7280 !important', fontSize: '1.875rem', fontWeight: '700'}}>Business Profile</h1>
       </div>
       
       {profileData.isLoading ? (
