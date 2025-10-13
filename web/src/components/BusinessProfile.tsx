@@ -176,7 +176,7 @@ export default function BusinessProfile() {
           </svg>
           Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold text-gray-600">Business Profile</h1>
+        <h1 className="text-3xl font-bold" style={{color: '#6b7280 !important'}}>Business Profile</h1>
       </div>
       
       {profileData.isLoading ? (
@@ -191,13 +191,25 @@ export default function BusinessProfile() {
                 <Tab
                   key={tab.id}
                   className={({ selected }: { selected: boolean }) =>
-                    `w-full py-3 text-sm font-medium rounded-md
-                     ${
-                       selected
-                         ? 'bg-white text-indigo-600 shadow'
-                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                     }`
+                    `w-full py-3 text-sm font-medium rounded-md`
                   }
+                  style={({ selected }: { selected: boolean }) => ({
+                    backgroundColor: selected ? 'white' : 'transparent',
+                    color: selected ? '#4f46e5' : '#6b7280',
+                    boxShadow: selected ? '0 1px 3px 0 rgba(0, 0, 0, 0.1)' : 'none'
+                  })}
+                  onMouseEnter={(e) => {
+                    if (e.currentTarget.getAttribute('aria-selected') !== 'true') {
+                      e.currentTarget.style.backgroundColor = '#f9fafb';
+                      e.currentTarget.style.color = '#374151';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (e.currentTarget.getAttribute('aria-selected') !== 'true') {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#6b7280';
+                    }
+                  }}
                 >
                   {tab.name}
                 </Tab>

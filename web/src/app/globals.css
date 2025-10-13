@@ -88,8 +88,23 @@ body, p, h1, h2, h3, h4, h5, h6, span, div, label, input, select, textarea, butt
 }
 
 /* Ultimate override - force ALL elements to have black text */
-html, body, div, span, p, h1, h2, h3, h4, h5, h6,
-form, input, button, label, select, textarea {
+html:not(.business-profile-container),
+body:not(.business-profile-container),
+div:not(.business-profile-container),
+span:not(.business-profile-container),
+p:not(.business-profile-container),
+h1:not(.business-profile-container h1),
+h2:not(.business-profile-container h2),
+h3:not(.business-profile-container h3),
+h4:not(.business-profile-container h4),
+h5:not(.business-profile-container h5),
+h6:not(.business-profile-container h6),
+form:not(.business-profile-container),
+input:not(.business-profile-container),
+button:not(.business-profile-container),
+label:not(.business-profile-container),
+select:not(.business-profile-container),
+textarea:not(.business-profile-container) {
   color: #000000 !important;
 }
 
@@ -99,7 +114,8 @@ form, input, button, label, select, textarea {
 }
 
 /* More targeted overrides for specific problematic elements */
-h2, .signin-heading, .auth-container h2, .auth-container p, .text-center {
+h2:not(.business-profile-container h1):not(.business-profile-container h2),
+.signin-heading, .auth-container h2, .auth-container p, .text-center {
   color: #000000 !important;
 }
 
