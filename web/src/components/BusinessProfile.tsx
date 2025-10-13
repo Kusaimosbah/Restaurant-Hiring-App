@@ -169,7 +169,7 @@ export default function BusinessProfile() {
       ) : profileData.error ? (
         <ErrorState error={profileData.error} />
       ) : (
-        <div className="bg-white rounded-lg shadow-md">
+        <div className="bg-white rounded-lg shadow-md text-gray-800">
           <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
             <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-t-lg">
               {tabs.map((tab) => (
@@ -180,7 +180,7 @@ export default function BusinessProfile() {
                      ${
                        selected
                          ? 'bg-white text-indigo-600 shadow'
-                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                         : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                      }`
                   }
                 >
@@ -192,8 +192,8 @@ export default function BusinessProfile() {
             <Tab.Panels className="p-6">
               {/* Business Details Panel */}
               <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Business Information</h2>
-                <p className="text-gray-500 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Information</h2>
+                <p className="text-gray-700 mb-6">
                   Update your restaurant's basic information, including name, description, and business type.
                 </p>
                 
@@ -215,8 +215,8 @@ export default function BusinessProfile() {
               
               {/* Address Panel */}
               <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Business Address</h2>
-                <p className="text-gray-500 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Business Address</h2>
+                <p className="text-gray-700 mb-6">
                   Update your restaurant's primary address information.
                 </p>
                 
@@ -229,8 +229,8 @@ export default function BusinessProfile() {
               
               {/* Locations Panel */}
               <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Multiple Locations</h2>
-                <p className="text-gray-500 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Multiple Locations</h2>
+                <p className="text-gray-700 mb-6">
                   Manage all your restaurant locations. Add new branches or update existing ones.
                 </p>
                 
@@ -379,8 +379,8 @@ export default function BusinessProfile() {
               
               {/* Photos Panel */}
               <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Photo Gallery</h2>
-                <p className="text-gray-500 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Photo Gallery</h2>
+                <p className="text-gray-700 mb-6">
                   Upload and manage photos of your restaurant, food, and staff.
                 </p>
                 
@@ -490,8 +490,8 @@ export default function BusinessProfile() {
               
               {/* Payment Panel */}
               <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-                <p className="text-gray-500 mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Information</h2>
+                <p className="text-gray-700 mb-6">
                   Manage your payment details for processing transactions.
                 </p>
                 

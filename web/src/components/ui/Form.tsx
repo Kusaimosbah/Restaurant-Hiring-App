@@ -26,12 +26,12 @@ interface FormFieldProps {
 export function FormField({ children, label, htmlFor, error, description }: FormFieldProps) {
   return (
     <div className="mb-4">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-800 mb-1">
         {label}
       </label>
       {children}
       {description && (
-        <p className="mt-1 text-sm text-gray-500">{description}</p>
+        <p className="mt-1 text-sm text-gray-600">{description}</p>
       )}
       {error && (
         <p className="mt-1 text-sm text-red-600">{error}</p>
@@ -50,7 +50,7 @@ export function FormSection({ children, title, description }: FormSectionProps) 
   return (
     <div className="mb-8">
       {title && <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>}
-      {description && <p className="text-gray-500 mb-4">{description}</p>}
+      {description && <p className="text-gray-700 mb-4">{description}</p>}
       <div className="space-y-4">
         {children}
       </div>
