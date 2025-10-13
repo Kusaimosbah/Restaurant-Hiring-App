@@ -59,3 +59,15 @@ h1, h2, h3, h4, h5, h6 {
 .animate-shake {
   animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
 }
+
+/* Fix for white text on white background */
+input, select, textarea {
+  color: var(--text-primary, #1f2937) !important;
+  background-color: white !important;
+}
+
+/* Fix for placeholder text */
+::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}

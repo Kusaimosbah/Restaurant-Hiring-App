@@ -8,6 +8,7 @@ import BusinessDetailsForm from './BusinessDetailsForm';
 import AddressForm from './AddressForm';
 import LocationsManager from './LocationsManager';
 import PhotoGallery from './PhotoGallery';
+import PaymentInfoForm from './PaymentInfoForm';
 
 // Define types for the profile data
 type BusinessProfileData = {
@@ -544,12 +545,91 @@ export default function BusinessProfile() {
                   </p>
                 </div>
                 
-                {/* TODO: Implement payment info form */}
-                <div className="bg-yellow-50 p-4 rounded-md">
-                  <p className="text-yellow-700">
-                    Payment information form will be implemented here.
-                  </p>
-                </div>
+                <PaymentInfoForm
+                  initialData={profileData.restaurant?.paymentInfo || {}}
+                  onSubmit={async (data) => {
+                    try {
+                      setIsSaving(true);
+                      
+                      const response = await fetch('/api/restaurant/payment', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                      });
+                      
+                      if (!response.ok) {
+                        throw new Error(`Failed to update payment info: ${response.status}`);
+                      }
+                      
+                      const updatedPaymentInfo = await response.json();
+                      
+                      // Update the local state with the updated payment info
+                      setProfileData(prev => ({
+                        ...prev,
+                        restaurant: {
+                          ...prev.restaurant!,
+                          paymentInfo: updatedPaymentInfo,
+                        },
+                      }));
+                      
+                      alert('Payment information saved successfully!');
+                    } catch (error) {
+                      console.error('Error saving payment information:', error);
+                      alert('Failed to save payment information. Please try again.');
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  onConnectStripe={async () => {
+                    try {
+                      setIsSaving(true);
+                      
+                      // In a real app, this would redirect to Stripe Connect OAuth flow
+                      // For demo purposes, we'll simulate connecting to Stripe
+                      setTimeout(() => {
+                        // Create a mock payment info object that matches the PaymentInfo type
+                        const mockPaymentInfo: PaymentInfo = {
+                          id: 'payment_' + Math.random().toString(36).substring(2, 15),
+                          createdAt: new Date(),
+                          updatedAt: new Date(),
+                          restaurantId: profileData.restaurant?.id || '',
+                          stripeCustomerId: 'cus_' + Math.random().toString(36).substring(2, 15),
+                          stripeAccountId: 'acct_' + Math.random().toString(36).substring(2, 15),
+                          bankAccountLast4: profileData.restaurant?.paymentInfo?.bankAccountLast4 || null,
+                          cardLast4: profileData.restaurant?.paymentInfo?.cardLast4 || null,
+                          isVerified: true
+                        };
+                        
+                        setProfileData(prev => {
+                          if (!prev.restaurant) return prev;
+                          
+                          return {
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant,
+                              paymentInfo: mockPaymentInfo
+                            }
+                          };
+                        });
+                        
+                        alert('Successfully connected to Stripe!');
+                        setIsSaving(false);
+                      }, 2000);
+                      
+                    } catch (error) {
+                      console.error('Error connecting to Stripe:', error);
+                      alert('Failed to connect to Stripe. Please try again.');
+                      setIsSaving(false);
+                    }
+                  }}
+                  isLoading={isSaving}
+                  onCancel={() => {
+                    // Reset form to initial data
+                    alert('Changes cancelled');
+                  }}
+                />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
