@@ -59,3 +59,46 @@ h1, h2, h3, h4, h5, h6 {
 .container h1, .container h2, .container h3, .container p {
   color: #000000 !important;
 }
+
+/* FORCE ALL TEXT TO BE BLACK - NO EXCEPTIONS */
+body, p, h1, h2, h3, h4, h5, h6, span, div, label, input, select, textarea, button {
+  color: #000000 !important;
+}
+
+/* Override all Tailwind text colors to black */
+.text-gray-50, .text-gray-100, .text-gray-200, .text-gray-300, .text-gray-400,
+.text-gray-500, .text-gray-600, .text-gray-700, .text-gray-800, .text-gray-900,
+.text-white, .text-black {
+  color: #000000 !important;
+}
+
+/* Special case for sign-in page */
+.signin-heading {
+  color: #000000 !important;
+}
+
+/* Ensure sign-in page text is black */
+.auth-container h2, .auth-container h1, .auth-container p {
+  color: #000000 !important;
+}
+
+/* Override any remaining white text */
+.text-white, [class*="text-white"] {
+  color: #000000 !important;
+}
+
+/* Ultimate override - force ALL elements to have black text */
+html, body, div, span, p, h1, h2, h3, h4, h5, h6,
+form, input, button, label, select, textarea {
+  color: #000000 !important;
+}
+
+/* Override any Tailwind color classes */
+[class*="text-gray"], [class*="text-white"], [class*="text-black"] {
+  color: #000000 !important;
+}
+
+/* FINAL OVERRIDE - ENSURE ALL TEXT IS BLACK */
+* {
+  color: #000000 !important;
+}

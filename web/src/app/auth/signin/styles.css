@@ -17,10 +17,10 @@
 /* Dark mode overrides */
 @media (prefers-color-scheme: dark) {
   .signin-heading {
-    color: #f9fafb !important; /* Very light gray, almost white */
+    color: #000000 !important; /* Force black even in dark mode */
   }
-  
+
   .signin-subtext {
-    color: #e5e7eb !important; /* Light gray for good contrast on dark */
+    color: #000000 !important; /* Force black even in dark mode */
   }
 }
