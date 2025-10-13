@@ -15,6 +15,7 @@ interface PaymentInfoFormProps {
   };
   onSubmit: (data: any) => Promise<void>;
   onConnectStripe: () => Promise<void>;
+  onCancel?: () => void;
   isLoading?: boolean;
 }
 
@@ -22,6 +23,7 @@ export default function PaymentInfoForm({
   initialData = {},
   onSubmit,
   onConnectStripe,
+  onCancel,
   isLoading = false,
 }: PaymentInfoFormProps) {
   const [formData, setFormData] = useState({
@@ -216,7 +218,7 @@ export default function PaymentInfoForm({
       {/* Form Actions */}
       {isStripeConnected && (
         <FormActions>
-          <Button type="button" variant="outline">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
