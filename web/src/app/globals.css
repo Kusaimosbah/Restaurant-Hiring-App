@@ -98,7 +98,7 @@ form, input, button, label, select, textarea {
   color: #000000 !important;
 }
 
-/* FINAL OVERRIDE - ENSURE ALL TEXT IS BLACK */
-* {
+/* More targeted overrides for specific problematic elements */
+h2, .signin-heading, .auth-container h2, .auth-container p, .text-center {
   color: #000000 !important;
 }
