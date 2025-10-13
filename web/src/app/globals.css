@@ -102,3 +102,13 @@ form, input, button, label, select, textarea {
 h2, .signin-heading, .auth-container h2, .auth-container p, .text-center {
   color: #000000 !important;
 }
+
+/* Allow gray colors in sidebar */
+.sidebar-container .text-gray-800,
+.sidebar-container .text-gray-600,
+.sidebar-container .text-gray-500,
+.sidebar-container .text-gray-400,
+.sidebar-container .text-gray-100,
+.sidebar-container .text-gray-900 {
+  color: inherit !important;
+}

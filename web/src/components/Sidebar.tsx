@@ -47,10 +47,10 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   const navItems = isAdmin ? adminNavItems : workerNavItems;
 
   return (
-    <div className={`bg-gray-900 text-white w-64 min-h-screen ${className}`}>
+    <div className={`bg-gray-100 text-gray-900 w-64 min-h-screen sidebar-container ${className}`}>
       <div className="p-6">
-        <h1 className="text-xl font-bold">Restaurant Hiring</h1>
-        <p className="text-gray-400 text-sm mt-1">
+        <h1 className="text-xl font-bold text-gray-800">Restaurant Hiring</h1>
+        <p className="text-gray-600 text-sm mt-1">
           {isAdmin ? 'Admin Panel' : 'Worker Portal'}
         </p>
       </div>
@@ -65,11 +65,13 @@ export default function Sidebar({ className = '' }: SidebarProps) {
                   href={item.href}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-gray-200 text-gray-900'
+                      : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                   }`}
                 >
-                  <item.icon className="h-5 w-5 mr-3" />
+                  <item.icon className={`h-5 w-5 mr-3 ${
+                    isActive ? 'text-gray-900' : 'text-gray-600'
+                  }`} />
                   {item.name}
                 </Link>
               </li>
