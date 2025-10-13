@@ -185,11 +185,6 @@ export default function PaymentInfoForm({
               </FormField>
             </div>
             
-            <div className="mt-4 p-4 bg-blue-50 rounded-md">
-              <p className="text-sm text-blue-700">
-                <strong>Note:</strong> In a real application, these payment details would be securely managed through Stripe's API and dashboard. This form is for demonstration purposes only.
-              </p>
-            </div>
           </div>
         )}
       </FormSection>
