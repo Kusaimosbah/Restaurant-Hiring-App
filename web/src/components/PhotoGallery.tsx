@@ -171,13 +171,8 @@ export default function PhotoGallery({
   return (
     <div className="space-y-8">
       {/* Upload Section */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium mb-4 text-gray-900 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-          Upload New Photo
-        </h3>
+      <div className="bg-white p-6 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium mb-4">Upload New Photo</h3>
         
         <div className="space-y-4">
           <div>
@@ -249,23 +244,22 @@ export default function PhotoGallery({
       
       {/* Photo Gallery */}
       {photos.length === 0 ? (
-        <div className="bg-gray-50 p-8 text-center rounded-lg border border-dashed border-gray-300 shadow-inner">
+        <div className="bg-gray-50 p-8 text-center rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500">No photos uploaded yet. Add your first photo above.</p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(photosByType).map(([type, typePhotos]) => (
             <div key={type} className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center mb-3">
-                <span className="inline-block w-3 h-3 rounded-full bg-indigo-500 mr-2"></span>
+              <h3 className="text-lg font-medium">
                 {photoTypes.find(t => t.value === type)?.label || 'Other'} Photos
               </h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {typePhotos.map((photo) => (
                   <div 
-                    key={photo.id} 
-                    className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+                    key={photo.id}
+                    className="relative group bg-white rounded-lg border border-gray-200 overflow-hidden"
                   >
                     {/* Photo */}
                     <div className="aspect-w-4 aspect-h-3">
@@ -284,7 +278,7 @@ export default function PhotoGallery({
                     </div>
                     
                     {/* Actions Overlay */}
-                    <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <Button
                         size="sm"
                         onClick={() => handleEditClick(photo)}
@@ -311,8 +305,8 @@ export default function PhotoGallery({
       
       {/* Edit Modal */}
       {editMode && selectedPhoto && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-2xl border border-gray-100">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
             <h3 className="text-lg font-medium mb-4">Edit Photo</h3>
             
             <div className="mb-4">

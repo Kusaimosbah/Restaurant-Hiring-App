@@ -1,0 +1,23 @@
+/* Force black text everywhere */
+body, p, h1, h2, h3, h4, h5, h6, span, div, label, input, select, textarea, button {
+  color: #000000 !important;
+}
+
+/* Override Tailwind text colors */
+.text-gray-50, .text-gray-100, .text-gray-200, .text-gray-300, .text-gray-400,
+.text-gray-500, .text-gray-600, .text-gray-700, .text-gray-800, .text-gray-900 {
+  color: #000000 !important;
+}
+
+/* Make sure inputs have black text */
+input, select, textarea {
+  color: #000000 !important;
+}
+
+/* Exception for buttons with specific background colors */
+.bg-indigo-600 button, .bg-blue-600 button, 
+.bg-red-600 button, .bg-green-600 button,
+button.bg-indigo-600, button.bg-blue-600, 
+button.bg-red-600, button.bg-green-600 {
+  color: #ffffff !important;
+}

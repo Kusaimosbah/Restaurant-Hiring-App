@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Tab } from '@headlessui/react';
 import { Restaurant, Address, Location, RestaurantPhoto, PaymentInfo } from '@prisma/client';
 import BusinessDetailsForm from './BusinessDetailsForm';
 import AddressForm from './AddressForm';
 import LocationsManager from './LocationsManager';
 import PhotoGallery from './PhotoGallery';
-import PaymentInfoForm from './PaymentInfoForm';
-import { Button } from './ui/Button';
+import './BusinessProfile.css';
 
 // Define types for the profile data
 type BusinessProfileData = {
@@ -35,7 +33,6 @@ const tabs = [
 
 export default function BusinessProfile() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
   const [profileData, setProfileData] = useState<BusinessProfileData>({
     restaurant: null,
@@ -164,49 +161,26 @@ export default function BusinessProfile() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="flex items-center justify-between mb-8 border-b border-gray-200 pb-4">
-        <div>
-          <div className="flex items-center mb-2">
-            <Button 
-              onClick={() => router.push('/dashboard')} 
-              variant="outline" 
-              className="mr-4 flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              Back to Dashboard
-            </Button>
-            <h1 className="text-3xl font-bold text-gray-900">Business Profile</h1>
-          </div>
-          <p className="text-gray-600 mt-1">Manage your restaurant's information and settings</p>
-        </div>
-        <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-md text-sm flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-          <span>Complete your profile to attract more applicants</span>
-        </div>
-      </div>
+    <div className="container mx-auto px-4 py-8 business-profile-container">
+      <h1 className="text-3xl font-bold mb-6" style={{color: '#000000'}}>Business Profile</h1>
       
       {profileData.isLoading ? (
         <LoadingState />
       ) : profileData.error ? (
         <ErrorState error={profileData.error} />
       ) : (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-lg shadow-md">
           <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-            <Tab.List className="flex p-2 space-x-2 bg-gray-50 border-b border-gray-200">
+            <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-t-lg business-profile-tabs">
               {tabs.map((tab) => (
                 <Tab
                   key={tab.id}
                   className={({ selected }: { selected: boolean }) =>
-                    `flex items-center justify-center px-4 py-3 text-sm font-medium rounded-md transition-all duration-200
+                    `w-full py-3 text-sm font-medium rounded-md
                      ${
                        selected
-                         ? 'bg-white text-indigo-600 shadow-sm border border-gray-200'
-                         : 'text-gray-700 hover:text-indigo-500 hover:bg-white/50'
+                         ? 'bg-white text-indigo-600 shadow'
+                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                      }`
                   }
                 >
@@ -215,20 +189,13 @@ export default function BusinessProfile() {
               ))}
             </Tab.List>
             
-            <Tab.Panels className="p-8">
+            <Tab.Panels className="p-6">
               {/* Business Details Panel */}
               <Tab.Panel>
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-8 border border-blue-100">
-                  <h2 className="text-xl font-semibold mb-2 text-gray-900 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Business Information
-                  </h2>
-                  <p className="text-gray-700 ml-8">
-                    Update your restaurant's basic information, including name, description, and business type.
-                  </p>
-                </div>
+                <h2 className="text-xl font-semibold mb-4">Business Information</h2>
+                <p className="text-gray-500 mb-6">
+                  Update your restaurant's basic information, including name, description, and business type.
+                </p>
                 
                 <BusinessDetailsForm 
                   initialData={{
@@ -243,50 +210,29 @@ export default function BusinessProfile() {
                   }}
                   onSubmit={handleSaveBusinessDetails}
                   isLoading={isSaving}
-                  onCancel={() => {
-                    alert('Changes cancelled');
-                  }}
                 />
               </Tab.Panel>
               
               {/* Address Panel */}
               <Tab.Panel>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-lg mb-8 border border-green-100">
-                  <h2 className="text-xl font-semibold mb-2 text-gray-900 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Business Address
-                  </h2>
-                  <p className="text-gray-700 ml-8">
-                    Update your restaurant's primary address information.
-                  </p>
-                </div>
+                <h2 className="text-xl font-semibold mb-4">Business Address</h2>
+                <p className="text-gray-500 mb-6">
+                  Update your restaurant's primary address information.
+                </p>
                 
                 <AddressForm 
                   initialData={profileData.restaurant?.address || {}}
                   onSubmit={handleSaveAddress}
                   isLoading={isSaving}
-                  onCancel={() => {
-                    alert('Changes cancelled');
-                  }}
                 />
               </Tab.Panel>
               
               {/* Locations Panel */}
               <Tab.Panel>
-                <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-6 rounded-lg mb-8 border border-purple-100">
-                  <h2 className="text-xl font-semibold mb-2 text-gray-900 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    Multiple Locations
-                  </h2>
-                  <p className="text-gray-700 ml-8">
-                    Manage all your restaurant locations. Add new branches or update existing ones.
-                  </p>
-                </div>
+                <h2 className="text-xl font-semibold mb-4">Multiple Locations</h2>
+                <p className="text-gray-500 mb-6">
+                  Manage all your restaurant locations. Add new branches or update existing ones.
+                </p>
                 
                 <LocationsManager
                   locations={profileData.restaurant?.locations || []}
@@ -433,17 +379,10 @@ export default function BusinessProfile() {
               
               {/* Photos Panel */}
               <Tab.Panel>
-                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-6 rounded-lg mb-8 border border-amber-100">
-                  <h2 className="text-xl font-semibold mb-2 text-gray-900 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Photo Gallery
-                  </h2>
-                  <p className="text-gray-700 ml-8">
-                    Upload and manage photos of your restaurant, food, and staff.
-                  </p>
-                </div>
+                <h2 className="text-xl font-semibold mb-4">Photo Gallery</h2>
+                <p className="text-gray-500 mb-6">
+                  Upload and manage photos of your restaurant, food, and staff.
+                </p>
                 
                 <PhotoGallery
                   photos={profileData.restaurant?.photos || []}
@@ -554,103 +493,17 @@ export default function BusinessProfile() {
               
               {/* Payment Panel */}
               <Tab.Panel>
-                <div className="bg-gradient-to-r from-red-50 to-rose-50 p-6 rounded-lg mb-8 border border-red-100">
-                  <h2 className="text-xl font-semibold mb-2 text-gray-900 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    Payment Information
-                  </h2>
-                  <p className="text-gray-700 ml-8">
-                    Manage your payment details for processing transactions.
+                <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+                <p className="text-gray-500 mb-6">
+                  Manage your payment details for processing transactions.
+                </p>
+                
+                {/* TODO: Implement payment info form */}
+                <div className="bg-yellow-50 p-4 rounded-md">
+                  <p className="text-yellow-700">
+                    Payment information form will be implemented here.
                   </p>
                 </div>
-                
-                <PaymentInfoForm
-                  initialData={profileData.restaurant?.paymentInfo || {}}
-                  onSubmit={async (data) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch('/api/restaurant/payment', {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to update payment info: ${response.status}`);
-                      }
-                      
-                      const updatedPaymentInfo = await response.json();
-                      
-                      // Update the local state with the updated payment info
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          paymentInfo: updatedPaymentInfo,
-                        },
-                      }));
-                      
-                      alert('Payment information saved successfully!');
-                    } catch (error) {
-                      console.error('Error saving payment information:', error);
-                      alert('Failed to save payment information. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onConnectStripe={async () => {
-                    try {
-                      setIsSaving(true);
-                      
-                      // In a real app, this would redirect to Stripe Connect OAuth flow
-                      // For demo purposes, we'll simulate connecting to Stripe
-                      setTimeout(() => {
-                        // Create a mock payment info object that matches the PaymentInfo type
-                        const mockPaymentInfo: PaymentInfo = {
-                          id: 'payment_' + Math.random().toString(36).substring(2, 15),
-                          createdAt: new Date(),
-                          updatedAt: new Date(),
-                          restaurantId: profileData.restaurant?.id || '',
-                          stripeCustomerId: 'cus_' + Math.random().toString(36).substring(2, 15),
-                          stripeAccountId: 'acct_' + Math.random().toString(36).substring(2, 15),
-                          bankAccountLast4: profileData.restaurant?.paymentInfo?.bankAccountLast4 || null,
-                          cardLast4: profileData.restaurant?.paymentInfo?.cardLast4 || null,
-                          isVerified: true
-                        };
-                        
-                        setProfileData(prev => {
-                          if (!prev.restaurant) return prev;
-                          
-                          return {
-                            ...prev,
-                            restaurant: {
-                              ...prev.restaurant,
-                              paymentInfo: mockPaymentInfo
-                            }
-                          };
-                        });
-                        
-                        alert('Successfully connected to Stripe!');
-                        setIsSaving(false);
-                      }, 2000);
-                      
-                    } catch (error) {
-                      console.error('Error connecting to Stripe:', error);
-                      alert('Failed to connect to Stripe. Please try again.');
-                      setIsSaving(false);
-                    }
-                  }}
-                  isLoading={isSaving}
-                  onCancel={() => {
-                    // Reset form to initial data
-                    alert('Changes cancelled');
-                  }}
-                />
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
@@ -663,10 +516,9 @@ export default function BusinessProfile() {
 // Loading state component
 function LoadingState() {
   return (
-    <div className="flex flex-col justify-center items-center h-64 bg-white rounded-xl shadow-md p-8">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
-      <span className="text-gray-700 text-lg font-medium">Loading your profile...</span>
-      <p className="text-gray-500 mt-2">This may take a few moments</p>
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <span className="ml-3 text-gray-600">Loading profile...</span>
     </div>
   );
 }
@@ -674,21 +526,10 @@ function LoadingState() {
 // Error state component
 function ErrorState({ error }: { error: string }) {
   return (
-    <div className="bg-red-50 p-6 rounded-lg border border-red-200 shadow-sm">
-      <div className="flex items-center mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <h3 className="text-lg font-medium text-red-800">Error loading profile</h3>
-      </div>
-      <p className="mt-2 text-red-600 font-medium">{error}</p>
-      <p className="mt-4 text-gray-700">Please try refreshing the page or contact support if the problem persists.</p>
-      <button 
-        onClick={() => window.location.reload()} 
-        className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-      >
-        Refresh Page
-      </button>
+    <div className="bg-red-50 p-4 rounded-md">
+      <h3 className="text-lg font-medium text-red-800">Error loading profile</h3>
+      <p className="mt-2 text-red-600">{error}</p>
+      <p className="mt-2">Please try refreshing the page or contact support if the problem persists.</p>
     </div>
   );
 }
@@ -696,22 +537,11 @@ function ErrorState({ error }: { error: string }) {
 // Unauthorized state component
 function UnauthorizedState() {
   return (
-    <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200 shadow-sm">
-      <div className="flex items-center mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-        <h3 className="text-lg font-medium text-yellow-800">Access Restricted</h3>
-      </div>
-      <p className="mt-2 text-gray-700">
+    <div className="bg-yellow-50 p-4 rounded-md">
+      <h3 className="text-lg font-medium text-yellow-800">Access Restricted</h3>
+      <p className="mt-2 text-yellow-600">
         You must be logged in as a restaurant owner to access this page.
       </p>
-      <a 
-        href="/auth/signin" 
-        className="mt-4 inline-block px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition-colors"
-      >
-        Sign In
-      </a>
     </div>
   );
 }

@@ -158,11 +158,8 @@ export default function BusinessDetailsForm({
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="space-y-8 bg-white rounded-lg border border-gray-100 shadow-sm p-6">
+    <Form onSubmit={handleSubmit} className="space-y-6">
       <FormSection title="Basic Information" description="General information about your restaurant">
-        <div className="border-l-4 border-indigo-500 pl-4 py-1 mb-4 bg-indigo-50 rounded-r-md">
-          <p className="text-sm text-indigo-700">This information will be displayed to potential employees</p>
-        </div>
         <FormField label="Business Name" htmlFor="name" error={errors.name}>
           <input
             type="text"
@@ -189,9 +186,6 @@ export default function BusinessDetailsForm({
       </FormSection>
       
       <FormSection title="Business Type & Cuisine" description="Categorize your restaurant to help customers find you">
-        <div className="border-l-4 border-green-500 pl-4 py-1 mb-4 bg-green-50 rounded-r-md">
-          <p className="text-sm text-green-700">Proper categorization helps job seekers find your restaurant</p>
-        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="Business Type" htmlFor="businessType">
             <select
@@ -286,32 +280,12 @@ export default function BusinessDetailsForm({
       </FormSection>
       
       <FormActions>
-        <div className="flex items-center justify-between w-full border-t border-gray-200 pt-4">
-          <div className="text-sm text-gray-500">
-            <span className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Last updated: {new Date().toLocaleDateString()}
-            </span>
-          </div>
-          <div className="flex space-x-3">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading} className="min-w-[120px]">
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Saving...
-                </span>
-              ) : 'Save Changes'}
-            </Button>
-          </div>
-        </div>
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save Changes'}
+        </Button>
       </FormActions>
     </Form>
   );

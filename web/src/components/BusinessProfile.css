@@ -1,0 +1,48 @@
+/* Business Profile specific styles */
+
+/* Force black text on all elements */
+.business-profile-container h1,
+.business-profile-container h2,
+.business-profile-container h3,
+.business-profile-container h4,
+.business-profile-container h5,
+.business-profile-container h6,
+.business-profile-container p,
+.business-profile-container span,
+.business-profile-container label,
+.business-profile-container div {
+  color: #000000 !important;
+}
+
+/* Ensure tab text is black */
+.business-profile-tabs button {
+  color: #000000 !important;
+}
+
+/* Ensure selected tab is clearly visible */
+.business-profile-tabs button[aria-selected="true"] {
+  color: #000000 !important;
+  font-weight: 600;
+}
+
+/* Make form labels black */
+.business-profile-container label {
+  color: #000000 !important;
+  font-weight: 500;
+}
+
+/* Make form inputs have black text */
+.business-profile-container input,
+.business-profile-container select,
+.business-profile-container textarea {
+  color: #000000 !important;
+}
+
+/* Override any gray text classes */
+.business-profile-container .text-gray-500,
+.business-profile-container .text-gray-600,
+.business-profile-container .text-gray-700,
+.business-profile-container .text-gray-800,
+.business-profile-container .text-gray-900 {
+  color: #000000 !important;
+}
