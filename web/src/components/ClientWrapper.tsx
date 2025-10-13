@@ -1,21 +1,11 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
+import { SessionProvider } from 'next-auth/react'
 
-interface ClientWrapperProps {
-  children: React.ReactNode;
-}
-
-export default function ClientWrapper({ children }: ClientWrapperProps) {
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  if (!hasMounted) {
-    return null;
-  }
-
-  return <>{children}</>;
+export default function ClientWrapper({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <SessionProvider>{children}</SessionProvider>
 }

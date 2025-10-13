@@ -37,24 +37,20 @@ model Restaurant {
   description         String?
   phone               String?
   email               String?
-  businessType        String?              // NEW: Type of restaurant (cafe, fine dining, etc.)
-  cuisineType         String?              // NEW: Type of cuisine served
-  websiteUrl          String?              // NEW: Restaurant website
-  logoUrl             String?
   ownerId             String               @unique
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
-  
-  // Relations
-  address             Address?             // NEW: Relation to detailed address
-  locations           Location[]           // NEW: Relation to multiple locations
-  photos              RestaurantPhoto[]    // NEW: Relation to photo gallery
-  paymentInfo         PaymentInfo?         // NEW: Relation to payment information
-  
-  // Existing relations
+  logoUrl             String?
+  businessType        String?
+  cuisineType         String?
+  websiteUrl          String?
+  address             Address?
   applications        Application[]
   jobs                Job[]
+  locations           Location[]
   onboardingDocuments OnboardingDocument[]
+  paymentInfo         PaymentInfo?
+  photos              RestaurantPhoto[]
   owner               User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   reviewsReceived     ReviewRestaurant[]
   reviewsGiven        ReviewWorker[]
@@ -63,79 +59,75 @@ model Restaurant {
   @@map("restaurants")
 }
 
-// NEW: Detailed address model
 model Address {
-  id            String     @id @default(cuid())
-  street        String
-  city          String
-  state         String
-  zipCode       String
-  country       String     @default("United States")
-  latitude      Float?
-  longitude     Float?
-  restaurantId  String     @unique
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  street       String
+  city         String
+  state        String
+  zipCode      String
+  country      String     @default("United States")
+  latitude     Float?
+  longitude    Float?
+  restaurantId String     @unique
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  @@index([restaurantId])
   @@map("addresses")
-  @@index([restaurantId])
 }
 
-// NEW: Multiple locations model
 model Location {
-  id            String     @id @default(cuid())
-  name          String
-  street        String
-  city          String
-  state         String
-  zipCode       String
-  country       String     @default("United States")
-  phone         String?
-  email         String?
+  id             String     @id @default(cuid())
+  name           String
+  street         String
+  city           String
+  state          String
+  zipCode        String
+  country        String     @default("United States")
+  phone          String?
+  email          String?
   isMainLocation Boolean    @default(false)
-  latitude      Float?
-  longitude     Float?
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  latitude       Float?
+  longitude      Float?
+  restaurantId   String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
+  @@index([restaurantId])
   @@map("locations")
-  @@index([restaurantId])
 }
 
-// NEW: Photo gallery model
 model RestaurantPhoto {
-  id            String     @id @default(cuid())
-  url           String
-  caption       String?
-  sortOrder     Int        @default(0)
-  type          PhotoType  @default(INTERIOR)
-  restaurantId  String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String     @id @default(cuid())
+  url          String
+  caption      String?
+  sortOrder    Int        @default(0)
+  type         PhotoType  @default(INTERIOR)
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  @@map("restaurant_photos")
   @@index([restaurantId])
+  @@map("restaurant_photos")
 }
 
-// NEW: Payment information model
 model PaymentInfo {
-  id                String     @id @default(cuid())
-  stripeCustomerId  String?
-  stripeAccountId   String?
-  bankAccountLast4  String?
-  cardLast4         String?
-  isVerified        Boolean    @default(false)
-  restaurantId      String     @unique
-  restaurant        Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  stripeCustomerId String?
+  stripeAccountId  String?
+  bankAccountLast4 String?
+  cardLast4        String?
+  isVerified       Boolean    @default(false)
+  restaurantId     String     @unique
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
-  @@map("payment_info")
   @@index([restaurantId])
+  @@map("payment_info")
 }
 
 model WorkerProfile {
@@ -356,7 +348,6 @@ enum ApplicationStatus {
   WITHDRAWN
 }
 
-// NEW: Photo type enum
 enum PhotoType {
   INTERIOR
   EXTERIOR

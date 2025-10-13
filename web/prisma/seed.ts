@@ -14,6 +14,10 @@ async function main() {
   await prisma.job.deleteMany()
   await prisma.availabilitySlot.deleteMany()
   await prisma.onboardingDocument.deleteMany()
+  await prisma.paymentInfo.deleteMany()
+  await prisma.restaurantPhoto.deleteMany()
+  await prisma.location.deleteMany()
+  await prisma.address.deleteMany()
   await prisma.restaurant.deleteMany()
   await prisma.workerProfile.deleteMany()
   await prisma.user.deleteMany()
@@ -31,15 +35,120 @@ async function main() {
     }
   })
 
-  // Create restaurant
+  // Create restaurant with updated fields
   const restaurant = await prisma.restaurant.create({
     data: {
       name: 'The Golden Fork',
-      address: '123 Main Street, Downtown',
       description: 'Fine dining restaurant specializing in contemporary cuisine',
       phone: '+1-555-0123',
       email: 'info@goldenfork.com',
-      ownerId: restaurantOwner.id
+      ownerId: restaurantOwner.id,
+      businessType: 'FINE_DINING',
+      cuisineType: 'AMERICAN',
+      websiteUrl: 'https://thegoldenfork.com',
+      logoUrl: 'https://example.com/logos/goldenfork.png'
+    }
+  })
+
+  // Create address for restaurant
+  const address = await prisma.address.create({
+    data: {
+      street: '123 Main Street',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94102',
+      country: 'United States',
+      latitude: 37.7749,
+      longitude: -122.4194,
+      restaurantId: restaurant.id
+    }
+  })
+
+  // Create main location
+  const mainLocation = await prisma.location.create({
+    data: {
+      name: 'Downtown Location',
+      street: '123 Main Street',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94102',
+      country: 'United States',
+      phone: '+1-555-0123',
+      email: 'downtown@goldenfork.com',
+      isMainLocation: true,
+      latitude: 37.7749,
+      longitude: -122.4194,
+      restaurantId: restaurant.id
+    }
+  })
+
+  // Create second location
+  const secondLocation = await prisma.location.create({
+    data: {
+      name: 'Marina Location',
+      street: '789 Marina Blvd',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94123',
+      country: 'United States',
+      phone: '+1-555-0456',
+      email: 'marina@goldenfork.com',
+      isMainLocation: false,
+      latitude: 37.8030,
+      longitude: -122.4352,
+      restaurantId: restaurant.id
+    }
+  })
+
+  // Create restaurant photos
+  const photos = await Promise.all([
+    prisma.restaurantPhoto.create({
+      data: {
+        url: 'https://example.com/photos/interior1.jpg',
+        caption: 'Main dining area',
+        sortOrder: 1,
+        type: 'INTERIOR',
+        restaurantId: restaurant.id
+      }
+    }),
+    prisma.restaurantPhoto.create({
+      data: {
+        url: 'https://example.com/photos/food1.jpg',
+        caption: 'Signature dish - Seared Salmon',
+        sortOrder: 2,
+        type: 'FOOD',
+        restaurantId: restaurant.id
+      }
+    }),
+    prisma.restaurantPhoto.create({
+      data: {
+        url: 'https://example.com/photos/exterior1.jpg',
+        caption: 'Restaurant exterior',
+        sortOrder: 3,
+        type: 'EXTERIOR',
+        restaurantId: restaurant.id
+      }
+    }),
+    prisma.restaurantPhoto.create({
+      data: {
+        url: 'https://example.com/photos/staff1.jpg',
+        caption: 'Our award-winning team',
+        sortOrder: 4,
+        type: 'STAFF',
+        restaurantId: restaurant.id
+      }
+    })
+  ])
+
+  // Create payment info
+  const paymentInfo = await prisma.paymentInfo.create({
+    data: {
+      stripeCustomerId: 'cus_sample123456',
+      stripeAccountId: 'acct_sample123456',
+      bankAccountLast4: '1234',
+      cardLast4: '4242',
+      isVerified: true,
+      restaurantId: restaurant.id
     }
   })
 
@@ -158,6 +267,10 @@ async function main() {
   console.log('✅ Seed completed successfully!')
   console.log(`👤 Restaurant Owner: ${restaurantOwner.email} (password: password123)`)
   console.log(`🏢 Restaurant: ${restaurant.name}`)
+  console.log(`📍 Main Location: ${mainLocation.name}`)
+  console.log(`📍 Second Location: ${secondLocation.name}`)
+  console.log(`🖼️ Photos added: ${photos.length}`)
+  console.log(`💳 Payment Info: ${paymentInfo.id}`)
   console.log(`👤 Worker: ${worker.email} (password: password123)`)
   console.log(`💼 Jobs created: ${jobs.length}`)
   console.log(`📝 Applications created: 1`)

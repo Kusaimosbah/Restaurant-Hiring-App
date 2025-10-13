@@ -12,40 +12,52 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        console.log('Authorizing with credentials:', { email: credentials?.email })
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing email or password')
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          },
-          include: {
-            restaurant: true,
-            workerProfile: true
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            },
+            include: {
+              restaurant: true,
+              workerProfile: true
+            }
+          })
+
+          console.log('User found:', user ? `${user.name} (${user.email})` : 'No user found')
+
+          if (!user) {
+            return null
           }
-        })
 
-        if (!user) {
+          const passwordMatch = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
+
+          console.log('Password match:', passwordMatch)
+
+          if (!passwordMatch) {
+            return null
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            restaurant: user.restaurant,
+            workerProfile: user.workerProfile
+          }
+        } catch (error) {
+          console.error('Auth error:', error)
           return null
-        }
-
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
-
-        if (!passwordMatch) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          restaurant: user.restaurant,
-          workerProfile: user.workerProfile
         }
       }
     })
@@ -75,5 +87,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/auth/signin',
     signUp: '/auth/signup'
-  }
+  },
+  debug: true // Enable debug mode
 }
