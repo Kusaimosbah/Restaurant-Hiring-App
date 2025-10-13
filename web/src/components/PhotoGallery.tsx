@@ -88,7 +88,25 @@ export default function PhotoGallery({
         });
       }, 300);
       
-      await onAddPhoto(formData);
+      // First upload the file to get a URL
+      const uploadResponse = await fetch('/api/restaurant/photos/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Failed to upload file: ${uploadResponse.status}`);
+      }
+      
+      // Get the URL from the upload response
+      const uploadResult = await uploadResponse.json();
+      
+      // Now create the photo record with the URL
+      await onAddPhoto({
+        url: uploadResult.url,
+        type: uploadResult.type,
+        caption: uploadResult.caption
+      });
       
       // Complete progress
       clearInterval(progressInterval);
@@ -111,6 +129,7 @@ export default function PhotoGallery({
       console.error('Error uploading photo:', error);
       setIsUploading(false);
       setUploadProgress(0);
+      alert('Failed to upload photo. Please try again.');
     }
   };
 

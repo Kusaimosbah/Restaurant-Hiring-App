@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, FormField, FormSection, FormActions } from '@/components/ui/Form';
 import { Button } from '@/components/ui/Button';
 
@@ -81,12 +81,14 @@ interface AddressFormProps {
   };
   onSubmit: (data: any) => Promise<void>;
   isLoading?: boolean;
+  onCancel?: () => void;
 }
 
 export default function AddressForm({
   initialData = {},
   onSubmit,
   isLoading = false,
+  onCancel,
 }: AddressFormProps) {
   const [formData, setFormData] = useState({
     street: initialData.street || '',
@@ -99,6 +101,20 @@ export default function AddressForm({
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Sync with parent when initialData changes
+  useEffect(() => {
+    setFormData({
+      street: initialData.street || '',
+      city: initialData.city || '',
+      state: initialData.state || '',
+      zipCode: initialData.zipCode || '',
+      country: initialData.country || 'United States',
+      latitude: initialData.latitude || null,
+      longitude: initialData.longitude || null,
+    });
+    setErrors({});
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -149,6 +165,20 @@ export default function AddressForm({
     } catch (error) {
       console.error('Error submitting form:', error);
     }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      street: initialData.street || '',
+      city: initialData.city || '',
+      state: initialData.state || '',
+      zipCode: initialData.zipCode || '',
+      country: initialData.country || 'United States',
+      latitude: initialData.latitude || null,
+      longitude: initialData.longitude || null,
+    });
+    setErrors({});
+    onCancel?.();
   };
 
   // TODO: Add map component for selecting location (latitude/longitude)
@@ -267,7 +297,7 @@ export default function AddressForm({
       </FormSection>
       
       <FormActions>
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" onClick={handleCancel}>
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>

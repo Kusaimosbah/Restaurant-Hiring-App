@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, FormField, FormSection, FormActions } from '@/components/ui/Form';
 import { Button } from '@/components/ui/Button';
 
@@ -57,12 +57,14 @@ interface BusinessDetailsFormProps {
   };
   onSubmit: (data: any) => Promise<void>;
   isLoading?: boolean;
+  onCancel?: () => void;
 }
 
 export default function BusinessDetailsForm({
   initialData = {},
   onSubmit,
   isLoading = false,
+  onCancel,
 }: BusinessDetailsFormProps) {
   const [formData, setFormData] = useState({
     name: initialData.name || '',
@@ -76,6 +78,21 @@ export default function BusinessDetailsForm({
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Keep form in sync if parent provides new initialData
+  useEffect(() => {
+    setFormData({
+      name: initialData.name || '',
+      description: initialData.description || '',
+      phone: initialData.phone || '',
+      email: initialData.email || '',
+      businessType: initialData.businessType || '',
+      cuisineType: initialData.cuisineType || '',
+      websiteUrl: initialData.websiteUrl || '',
+      logoUrl: initialData.logoUrl || '',
+    });
+    setErrors({});
+  }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -122,6 +139,22 @@ export default function BusinessDetailsForm({
     } catch (error) {
       console.error('Error submitting form:', error);
     }
+  };
+
+  const handleCancel = () => {
+    // Reset all fields back to the initial values and clear errors
+    setFormData({
+      name: initialData.name || '',
+      description: initialData.description || '',
+      phone: initialData.phone || '',
+      email: initialData.email || '',
+      businessType: initialData.businessType || '',
+      cuisineType: initialData.cuisineType || '',
+      websiteUrl: initialData.websiteUrl || '',
+      logoUrl: initialData.logoUrl || '',
+    });
+    setErrors({});
+    onCancel?.();
   };
 
   return (
@@ -247,7 +280,7 @@ export default function BusinessDetailsForm({
       </FormSection>
       
       <FormActions>
-        <Button type="button" variant="outline">
+        <Button type="button" variant="outline" onClick={handleCancel}>
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
