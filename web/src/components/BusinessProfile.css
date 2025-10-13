@@ -1,6 +1,6 @@
 /* Business Profile specific styles */
 
-/* Force black text on all elements */
+/* Allow gray text in Business Profile */
 .business-profile-container h1,
 .business-profile-container h2,
 .business-profile-container h3,
@@ -11,38 +11,38 @@
 .business-profile-container span,
 .business-profile-container label,
 .business-profile-container div {
-  color: #000000 !important;
+  color: inherit !important;
 }
 
-/* Ensure tab text is black */
+/* Allow gray tab text */
 .business-profile-tabs button {
-  color: #000000 !important;
+  color: inherit !important;
 }
 
 /* Ensure selected tab is clearly visible */
 .business-profile-tabs button[aria-selected="true"] {
-  color: #000000 !important;
+  color: #4b5563 !important;
   font-weight: 600;
 }
 
-/* Make form labels black */
+/* Allow gray form labels */
 .business-profile-container label {
-  color: #000000 !important;
+  color: inherit !important;
   font-weight: 500;
 }
 
-/* Make form inputs have black text */
+/* Allow gray form inputs */
 .business-profile-container input,
 .business-profile-container select,
 .business-profile-container textarea {
-  color: #000000 !important;
+  color: inherit !important;
 }
 
-/* Override any gray text classes */
+/* Allow gray text classes in Business Profile */
 .business-profile-container .text-gray-500,
 .business-profile-container .text-gray-600,
 .business-profile-container .text-gray-700,
 .business-profile-container .text-gray-800,
 .business-profile-container .text-gray-900 {
-  color: #000000 !important;
+  color: inherit !important;
 }
