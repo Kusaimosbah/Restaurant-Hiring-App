@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -20,11 +20,7 @@ interface Task {
 }
 
 export default function TasksPage() {
-  return (
-    <SessionProvider>
-      <TasksPageContent />
-    </SessionProvider>
-  );
+  return <TasksPageContent />;
 }
 
 function TasksPageContent() {

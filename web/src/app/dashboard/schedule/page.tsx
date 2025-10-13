@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -24,11 +24,7 @@ interface ScheduleItem {
 }
 
 export default function SchedulePage() {
-  return (
-    <SessionProvider>
-      <SchedulePageContent />
-    </SessionProvider>
-  );
+  return <SchedulePageContent />;
 }
 
 function SchedulePageContent() {

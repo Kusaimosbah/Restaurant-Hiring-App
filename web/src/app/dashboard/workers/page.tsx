@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -22,11 +22,7 @@ interface Worker {
 }
 
 export default function WorkersPage() {
-  return (
-    <SessionProvider>
-      <WorkersPageContent />
-    </SessionProvider>
-  );
+  return <WorkersPageContent />;
 }
 
 function WorkersPageContent() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -18,11 +18,7 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
-  return (
-    <SessionProvider>
-      <AnalyticsPageContent />
-    </SessionProvider>
-  );
+  return <AnalyticsPageContent />;
 }
 
 function AnalyticsPageContent() {

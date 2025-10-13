@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useSession, SessionProvider } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -34,11 +34,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
-  return (
-    <SessionProvider>
-      <MessagesPageContent />
-    </SessionProvider>
-  );
+  return <MessagesPageContent />;
 }
 
 function MessagesPageContent() {
