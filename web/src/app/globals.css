@@ -152,6 +152,19 @@ h2:not(.business-profile-container h1):not(.business-profile-container h2),
   color: #6b7280 !important;
 }
 
+/* Override with extremely high specificity */
+html body .business-profile-container h1 {
+  color: #6b7280 !important;
+}
+
+html body div.business-profile-container h1 {
+  color: #6b7280 !important;
+}
+
+div.business-profile-container > h1 {
+  color: #6b7280 !important;
+}
+
 /* Allow gray colors in sidebar */
 .sidebar-container .text-gray-800,
 .sidebar-container .text-gray-600,
