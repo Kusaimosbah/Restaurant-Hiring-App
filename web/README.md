@@ -1,273 +1,177 @@
-# Restaurant Hiring App 🍽️
+# Restaurant Hiring App
 
-A full-stack MVP web application where restaurants can hire workers (servers, chefs) for one-day or specific-day shifts. Built with Next.js 15, Prisma, PostgreSQL, and NextAuth.
+A modern platform connecting restaurants with skilled workers in the hospitality industry.
 
-## 🏗️ Architecture Overview
+## Features
 
-This is a **monolithic Next.js application** that combines both frontend and backend in a single codebase for rapid MVP development.
+### Phase 1 (Core Features)
 
-### Tech Stack
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Database**: PostgreSQL (Dockerized)
-- **ORM**: Prisma
-- **Authentication**: NextAuth with credentials provider
-- **Styling**: TailwindCSS
-- **Deployment**: Vercel-ready
-- **CI/CD**: GitHub Actions
+- ✅ **Business Profile Management**: Complete restaurant profile with details, locations, photos, and payment info
+- ✅ **Job Seeker Profile & Onboarding**: Worker profiles with personal info, skills, certifications, and documents
+- ✅ **Enhanced Dashboard with Role-Based Views**: Customized dashboards for restaurant owners and workers
+- ✅ **Job Search & Discovery Interface**: Advanced job search with filters, map view, and recommendations
+- ✅ **Mobile-First Responsive Design**: Optimized experience across all device sizes
+- ✅ **Review & Rating System**: Two-way review system for restaurants and workers
 
-### Application Architecture
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│                 │    │                 │    │                 │
-│ • React Pages   │◄──►│ • API Routes    │◄──►│ • PostgreSQL    │
-│ • Components    │    │ • NextAuth      │    │ • Prisma ORM    │
-│ • Client Hooks  │    │ • Server Actions│    │ • Docker        │
-│ • TailwindCSS   │    │ • Middleware    │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+### Phase 2 (Enhanced Features)
 
-## 📁 Project Structure
+- ✅ **Comprehensive Notification System**: Real-time notifications, email alerts, and preference management
+- ✅ **Onboarding & Training System**: Guided onboarding flows and training materials
+- ⬜ **Advanced Scheduling & Availability**: Calendar integration and shift management
+- ⬜ **Integrated Chat System**: Real-time messaging between restaurants and workers
+- ⬜ **Payment Processing & Invoicing**: Secure payment processing and automated invoicing
+- ⬜ **Analytics & Reporting Dashboard**: Detailed insights and performance metrics
 
-```
-web/
-├── prisma/
-│   ├── schema.prisma          # Database schema with all models
-│   └── seed.ts               # Demo data seeding script
-├── src/
-│   ├── app/
-│   │   ├── api/              # Backend API routes
-│   │   │   ├── auth/[...nextauth]/  # Authentication endpoints
-│   │   │   ├── register/            # User registration
-│   │   │   ├── jobs/               # Job management
-│   │   │   └── applications/       # Application handling
-│   │   ├── auth/             # Authentication pages
-│   │   │   └── signin/       # Sign-in page
-│   │   ├── dashboard/        # User dashboard
-│   │   ├── globals.css       # Global styles
-│   │   └── layout.tsx        # Root layout
-│   ├── lib/
-│   │   ├── prisma.ts         # Prisma client configuration
-│   │   └── auth.ts           # NextAuth configuration
-│   └── types/
-│       └── next-auth.d.ts    # NextAuth type definitions
-├── .env.local                # Environment variables
-├── package.json              # Dependencies and scripts
-├── tailwind.config.ts        # TailwindCSS configuration
-└── tsconfig.json            # TypeScript configuration
-```
-
-## 🗄️ Database Schema
-
-### Core Models
-- **User**: Authentication and basic profile
-- **Restaurant**: Restaurant profiles and information
-- **WorkerProfile**: Worker skills, experience, and availability
-- **Job**: Job postings with requirements and pay rates
-- **Application**: Job applications from workers
-- **ShiftAssignment**: Accepted applications converted to shifts
-- **ReviewWorker**: Restaurant reviews of workers
-- **ReviewRestaurant**: Worker reviews of restaurants
-- **AvailabilitySlot**: Worker availability schedules
-- **OnboardingDocument**: Document management
-
-### User Roles
-- **RESTAURANT_OWNER**: Can create restaurants, post jobs, review applications
-- **WORKER**: Can apply to jobs, manage availability, receive reviews
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-Make sure you have the following installed:
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **Docker** and **Docker Compose** - [Download](https://docs.docker.com/get-docker/)
-- **Git** - [Download](https://git-scm.com/)
+- Node.js 18+
+- Docker and Docker Compose
+- PostgreSQL (via Docker)
 
-### Installation & Setup
+### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Restaurant-Hiring-App
+1. Clone the repository:
+   ```
+   git clone https://github.com/yourusername/restaurant-hiring-app.git
+   cd restaurant-hiring-app
    ```
 
-2. **Install dependencies**
-   ```bash
+2. Start the PostgreSQL database:
+   ```
+   docker-compose up -d
+   ```
+
+3. Install dependencies:
+   ```
    cd web
    npm install
    ```
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.local .env
-   # Edit .env with your actual values if needed
+4. Set up environment variables:
+   ```
+   cp .env.example .env
+   ```
+   Edit `.env` to set your database connection and other configuration options.
+
+5. Apply database migrations:
+   ```
+   npx prisma migrate dev
    ```
 
-4. **Start the PostgreSQL database**
-   ```bash
-   cd ..
-   docker-compose up -d
+6. Seed the database:
    ```
-
-5. **Generate Prisma client**
-   ```bash
-   cd web
-   npm run db:generate
-   ```
-
-6. **Run database migrations**
-   ```bash
-   npm run db:migrate
-   ```
-
-7. **Seed the database with demo data**
-   ```bash
    npm run db:seed
    ```
 
-8. **Start the development server**
-   ```bash
+7. Start the development server:
+   ```
    npm run dev
    ```
 
-9. **Open the application**
-   
-   Visit [http://localhost:3000](http://localhost:3000) in your browser.
+8. Open [http://localhost:3001](http://localhost:3001) in your browser.
 
-### Demo Accounts
+## User Accounts
 
-After seeding, you can use these demo accounts:
+The seed data creates the following test accounts:
 
-**Restaurant Owner:**
-- Email: `owner@restaurant.com`
-- Password: `password123`
-- Restaurant: "The Golden Fork"
+### Restaurant Owner
+- Email: owner@restaurant.com
+- Password: password123
 
-**Worker:**
-- Email: `worker@example.com` 
-- Password: `password123`
-- Profile: Experienced server with skills and availability
+### Worker
+- Email: worker@example.com
+- Password: password123
 
-## 🎯 Core Features Implemented
+## Architecture
 
-### ✅ Authentication & Authorization
-- [x] User registration with role selection
-- [x] Secure login with NextAuth
-- [x] Role-based access control (Restaurant Owner / Worker)
-- [x] Session management
+- **Frontend**: Next.js 14, React, Tailwind CSS
+- **Backend**: Next.js API routes
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **State Management**: React Context API and hooks
+- **Maps**: Mapbox GL JS
+- **Real-time Features**: Server-Sent Events (SSE)
 
-### ✅ Restaurant Management  
-- [x] Restaurant profile creation
-- [x] Restaurant information management
-- [x] Owner dashboard
+## Key Components
 
-### ✅ Worker Profiles
-- [x] Worker profile with bio, skills, experience
-- [x] Hourly rate setting
-- [x] Availability slot management
-- [x] Worker dashboard
+### Business Profile Management
+- Complete restaurant profile management
+- Multiple location support
+- Photo gallery
+- Payment information
 
-### ✅ Job Management
-- [x] Job posting creation (title, description, requirements)
-- [x] Hourly rate and shift timing
-- [x] Job status management (Active, Filled, Cancelled)
-- [x] Multi-worker job support
+### Job Seeker Profile
+- Personal information
+- Skills and experience
+- Certifications
+- Document management
 
-### ✅ Application System
-- [x] Workers can apply to jobs with messages
-- [x] Restaurant owners can view applications
-- [x] Application status tracking (Pending, Accepted, Rejected)
-- [x] Automatic shift assignment creation
+### Enhanced Dashboard
+- Role-based views
+- Performance metrics
+- Activity feed
+- Task management
 
-### ✅ Database & Infrastructure
-- [x] Complete Prisma schema
-- [x] PostgreSQL with Docker
-- [x] Database seeding with realistic demo data
-- [x] CI/CD pipeline with GitHub Actions
+### Job Search & Discovery
+- Advanced filtering
+- Map view with geolocation
+- Job recommendations
+- Quick apply functionality
 
-## 🛠️ Available Scripts
+### Mobile-First Responsive Design
+- Optimized for all screen sizes
+- Touch-friendly interface
+- Responsive navigation
+- Keyboard handling for forms
 
-```bash
-# Development
-npm run dev              # Start development server
-npm run build           # Build for production
-npm run start           # Start production server
-npm run lint            # Run ESLint
+### Review & Rating System
+- Two-way review system
+- Rating summaries
+- Detailed feedback
+- Reputation management
 
-# Database
-npm run db:generate     # Generate Prisma client
-npm run db:push         # Push schema changes to database
-npm run db:migrate      # Run database migrations
-npm run db:seed         # Seed database with demo data
+### Notification System
+- In-app notifications
+- Email notifications
+- Push notifications
+- Notification preferences
+- Real-time delivery
 
-# Database Management
-npm run db:studio       # Open Prisma Studio (add to package.json)
-npm run db:reset        # Reset database (add to package.json)
-```
+## Development
 
-## 🔧 Development Workflow
+### Folder Structure
 
-1. **Make schema changes** in `prisma/schema.prisma`
-2. **Run migration** with `npm run db:migrate`
-3. **Update seed data** if needed in `prisma/seed.ts`
-4. **Create API routes** in `src/app/api/`
-5. **Build UI components** in `src/app/`
-6. **Test locally** with demo accounts
+- `/web` - Next.js application
+  - `/src` - Source code
+    - `/app` - Next.js App Router
+    - `/components` - React components
+    - `/lib` - Utilities and services
+    - `/hooks` - Custom React hooks
+    - `/types` - TypeScript type definitions
+  - `/prisma` - Database schema and migrations
+  - `/public` - Static assets
 
-## 📦 What's Next?
+### Scripts
 
-### High Priority Features
-- [ ] **Job Search & Filtering**: Search jobs by location, pay rate, date
-- [ ] **Application Management UI**: Restaurant owner application review interface
-- [ ] **Shift Management**: Calendar view, shift status updates
-- [ ] **Notifications**: Email/in-app notifications for applications
-- [ ] **Profile Management**: Edit restaurant and worker profiles
-- [ ] **File Uploads**: Profile pictures, documents, certifications
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run db:seed` - Seed the database
+- `npm run db:reset` - Reset the database
 
-### Medium Priority Features  
-- [ ] **Review System UI**: Rating and review interface
-- [ ] **Calendar Integration**: Google Calendar sync for shifts
-- [ ] **Payment Integration**: Stripe for shift payments
-- [ ] **Mobile Responsiveness**: Optimize for mobile devices
-- [ ] **Real-time Updates**: WebSocket for live notifications
+## Testing
 
-### Low Priority / Future
-- [ ] **Multi-location Support**: Chain restaurants
-- [ ] **Advanced Analytics**: Dashboard with metrics
-- [ ] **API Documentation**: OpenAPI/Swagger docs
-- [ ] **Mobile App**: React Native app
-- [ ] **Background Jobs**: Queue system for emails
+- `npm run test` - Run tests
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage
 
-## 🚀 Deployment
+## Contributing
 
-### Vercel Deployment (Recommended)
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set environment variables in Vercel dashboard
-4. Deploy automatically on push to main
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-### Environment Variables for Production
-```bash
-DATABASE_URL="your-production-postgres-url"
-NEXTAUTH_URL="https://your-domain.com"
-NEXTAUTH_SECRET="your-production-secret"
-NODE_ENV="production"
-```
+## License
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-**Happy Hiring! 🍽️✨**
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

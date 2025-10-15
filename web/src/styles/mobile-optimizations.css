@@ -1,0 +1,176 @@
+/* Mobile Optimizations CSS */
+
+/* Touch Target Sizes - Ensure interactive elements are at least 44x44px */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Increase touch targets for common elements */
+button,
+.btn,
+[role="button"],
+input[type="checkbox"] + label,
+input[type="radio"] + label,
+select,
+.select,
+.dropdown-trigger {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Checkbox and radio button touch areas */
+input[type="checkbox"],
+input[type="radio"] {
+  height: 24px;
+  width: 24px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+/* Form Field Spacing */
+.form-field-mobile {
+  margin-bottom: 16px;
+}
+
+.form-group-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stack form fields on mobile */
+@media (max-width: 640px) {
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .form-col {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+  
+  /* Full width inputs on mobile */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    width: 100%;
+  }
+  
+  /* Increase form label spacing */
+  label {
+    margin-bottom: 8px;
+    display: block;
+  }
+  
+  /* Increase spacing between form sections */
+  .form-section {
+    margin-bottom: 32px;
+  }
+}
+
+/* Keyboard handling - ensure form fields are visible when focused */
+.keyboard-visible {
+  scroll-margin-top: 120px;
+  scroll-margin-bottom: 120px;
+}
+
+/* Make form elements scroll into view when focused on mobile */
+@media (max-width: 640px) {
+  input:focus,
+  select:focus,
+  textarea:focus {
+    scroll-margin-top: 120px;
+    scroll-margin-bottom: 120px;
+  }
+}
+
+/* Improved button styles for mobile */
+.mobile-btn {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Bottom-aligned action buttons for mobile */
+@media (max-width: 640px) {
+  .mobile-actions {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    background-color: white;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  .mobile-actions button {
+    flex: 1;
+    min-height: 48px;
+  }
+}
+
+/* Mobile form container with proper spacing */
+.mobile-form-container {
+  padding-bottom: 80px; /* Space for bottom action buttons */
+}
+
+/* Ensure input fields have sufficient height for touch */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+textarea,
+select {
+  height: 48px;
+  padding: 12px 16px;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+}
+
+textarea {
+  height: auto;
+  min-height: 96px;
+}
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure labels are large enough to tap */
+label {
+  padding: 4px 0;
+  display: inline-block;
+}
+
+/* Improve select dropdown appearance on mobile */
+select {
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+/* Ensure form validation messages are visible */
+.form-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Ensure form fields have proper spacing between them */
+.form-field + .form-field {
+  margin-top: 16px;
+}

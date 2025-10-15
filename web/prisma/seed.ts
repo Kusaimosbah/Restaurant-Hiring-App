@@ -162,7 +162,7 @@ async function main() {
     }
   })
 
-  // Create worker profile
+  // Create worker profile with enhanced fields
   const workerProfile = await prisma.workerProfile.create({
     data: {
       userId: worker.id,
@@ -170,7 +170,18 @@ async function main() {
       experience: 'Previous work at top restaurants in the city',
       skills: ['Customer Service', 'Food Service', 'POS Systems', 'Wine Knowledge'],
       hourlyRate: 18.50,
-      availability: 'Flexible weekdays and weekends'
+      availability: 'Flexible weekdays and weekends',
+      // New fields
+      title: 'Senior Server',
+      yearsOfExperience: 3.5,
+      contactEmail: 'jane.worker@personal.com',
+      contactPhone: '+1-555-9876',
+      preferredContactMethod: 'Email',
+      address: '456 Worker St',
+      city: 'San Francisco',
+      state: 'CA',
+      zipCode: '94110',
+      profilePictureUrl: 'https://example.com/profiles/jane.jpg'
     }
   })
 
@@ -209,6 +220,110 @@ async function main() {
       }
     ]
   })
+  
+  // Create worker skills with experience levels
+  const workerSkills = await Promise.all([
+    prisma.workerSkill.create({
+      data: {
+        name: 'Customer Service',
+        experienceLevel: 'EXPERT',
+        yearsOfExperience: 5.0,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerSkill.create({
+      data: {
+        name: 'Food Service',
+        experienceLevel: 'ADVANCED',
+        yearsOfExperience: 3.5,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerSkill.create({
+      data: {
+        name: 'POS Systems',
+        experienceLevel: 'INTERMEDIATE',
+        yearsOfExperience: 2.0,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerSkill.create({
+      data: {
+        name: 'Wine Knowledge',
+        experienceLevel: 'ADVANCED',
+        yearsOfExperience: 3.0,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerSkill.create({
+      data: {
+        name: 'Bartending',
+        experienceLevel: 'BEGINNER',
+        yearsOfExperience: 1.0,
+        workerId: workerProfile.id
+      }
+    })
+  ])
+  
+  // Create certifications
+  const certifications = await Promise.all([
+    prisma.certification.create({
+      data: {
+        name: 'Food Handler Certification',
+        issuingOrganization: 'ServSafe',
+        issueDate: new Date('2024-01-15'),
+        expirationDate: new Date('2027-01-15'),
+        credentialId: 'SS-123456',
+        verificationUrl: 'https://servsafe.com/verify/SS-123456',
+        isVerified: true,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.certification.create({
+      data: {
+        name: 'Level 1 Sommelier',
+        issuingOrganization: 'Court of Master Sommeliers',
+        issueDate: new Date('2023-06-10'),
+        expirationDate: null, // No expiration
+        credentialId: 'CMS-789012',
+        verificationUrl: 'https://mastersommeliers.org/verify/CMS-789012',
+        isVerified: true,
+        workerId: workerProfile.id
+      }
+    })
+  ])
+  
+  // Create worker documents
+  const workerDocuments = await Promise.all([
+    prisma.workerDocument.create({
+      data: {
+        name: 'Resume',
+        documentType: 'RESUME',
+        filePath: 'https://example.com/documents/jane-resume.pdf',
+        isVerified: true,
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerDocument.create({
+      data: {
+        name: 'Previous Employment Verification',
+        documentType: 'WORK_HISTORY',
+        filePath: 'https://example.com/documents/jane-employment.pdf',
+        isVerified: true,
+        notes: 'Verified with previous employer',
+        workerId: workerProfile.id
+      }
+    }),
+    prisma.workerDocument.create({
+      data: {
+        name: 'ID Document',
+        documentType: 'ID_VERIFICATION',
+        filePath: 'https://example.com/documents/jane-id.jpg',
+        isVerified: true,
+        workerId: workerProfile.id
+      }
+    })
+  ])
 
   // Create jobs
   const jobs = await Promise.all([
@@ -272,6 +387,9 @@ async function main() {
   console.log(`🖼️ Photos added: ${photos.length}`)
   console.log(`💳 Payment Info: ${paymentInfo.id}`)
   console.log(`👤 Worker: ${worker.email} (password: password123)`)
+  console.log(`🔧 Worker Skills: ${workerSkills.length}`)
+  console.log(`🏆 Certifications: ${certifications.length}`)
+  console.log(`📄 Worker Documents: ${workerDocuments.length}`)
   console.log(`💼 Jobs created: ${jobs.length}`)
   console.log(`📝 Applications created: 1`)
 }

@@ -2,7 +2,8 @@
 
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from './ui/Button';
-import NotificationDropdown from './NotificationDropdown';
+import NotificationIcon from './notifications/NotificationIcon';
+import MobileNav from './dashboard/MobileNav';
 import {
   UserIcon,
   ArrowRightOnRectangleIcon,
@@ -15,22 +16,30 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
   const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'RESTAURANT_OWNER';
 
   return (
     <div className="bg-white shadow-sm border-b border-gray-200">
-      <div className="px-6 py-4">
+      <div className="px-4 sm:px-6 py-4">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            {subtitle && (
-              <p className="text-gray-600 mt-1">{subtitle}</p>
-            )}
+          <div className="flex items-center">
+            <div className="lg:hidden mr-4">
+              <MobileNav isAdmin={isAdmin} />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
+              {subtitle && (
+                <p className="text-sm sm:text-base text-gray-600 mt-1">{subtitle}</p>
+              )}
+            </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <NotificationDropdown />
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="hidden sm:block">
+              <NotificationIcon />
+            </div>
             
-            <div className="flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <UserIcon className="h-5 w-5 text-gray-500" />
                 <span className="text-sm text-gray-700">
@@ -39,7 +48,7 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
               </div>
               <div className="h-6 w-px bg-gray-300" />
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                {session?.user?.role === 'RESTAURANT_OWNER' ? 'Admin' : 'Worker'}
+                {isAdmin ? 'Admin' : 'Worker'}
               </span>
             </div>
             
@@ -47,10 +56,10 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
               variant="outline"
               size="sm"
               onClick={() => signOut()}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-0 sm:space-x-2 px-2 sm:px-3"
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </Button>
           </div>
         </div>

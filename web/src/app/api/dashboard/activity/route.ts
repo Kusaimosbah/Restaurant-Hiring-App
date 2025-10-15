@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -13,6 +13,11 @@ export async function GET() {
         { status: 401 }
       )
     }
+
+    // Get filter from query params
+    const url = new URL(request.url)
+    const filterType = url.searchParams.get('type')
+    const limit = parseInt(url.searchParams.get('limit') || '10', 10)
 
     const isAdmin = session.user.role === 'RESTAURANT_OWNER'
 
@@ -32,7 +37,8 @@ export async function GET() {
       }
 
       // Get recent applications
-      const recentApplications = await prisma.application.findMany({
+      const recentApplications = filterType && filterType !== 'application' ? [] : 
+        await prisma.application.findMany({
         where: { restaurantId: restaurant.id },
         include: {
           worker: {
@@ -43,14 +49,63 @@ export async function GET() {
           job: true
         },
         orderBy: { appliedAt: 'desc' },
-        take: 5
+          take: limit
       })
 
       // Get recent jobs
-      const recentJobs = await prisma.job.findMany({
+      const recentJobs = filterType && filterType !== 'job' ? [] :
+        await prisma.job.findMany({
         where: { restaurantId: restaurant.id },
         orderBy: { createdAt: 'desc' },
-        take: 3
+          take: limit
+        })
+
+      // Get recent worker activity
+      const recentWorkerActivity = filterType && filterType !== 'worker' ? [] :
+        await prisma.shiftAssignment.findMany({
+          where: { restaurantId: restaurant.id },
+          include: {
+            worker: {
+              include: {
+                user: true
+              }
+            },
+            job: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        })
+
+      // Get recent messages
+      const recentMessages = filterType && filterType !== 'message' ? [] :
+        await prisma.message.findMany({
+          where: { 
+            OR: [
+              { senderId: session.user.id },
+              { receiverId: session.user.id }
+            ]
+          },
+          include: {
+            sender: true,
+            receiver: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        })
+
+      // Get recent reviews
+      const recentReviews = filterType && filterType !== 'review' ? [] :
+        await prisma.review.findMany({
+          where: { restaurantId: restaurant.id },
+          include: {
+            worker: {
+              include: {
+                user: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
       })
 
       const activities = [
@@ -58,15 +113,51 @@ export async function GET() {
           id: app.id,
           type: 'application' as const,
           message: `${app.worker.user.name} applied for ${app.job.title} position`,
-          time: formatTimeAgo(app.appliedAt)
+          time: formatTimeAgo(app.appliedAt),
+          details: app.coverLetter || `Experience: ${app.worker.yearsOfExperience} years`,
+          link: `/dashboard/applications?id=${app.id}`
         })),
         ...recentJobs.map(job => ({
           id: job.id,
           type: 'job' as const,
           message: `${job.title} position was posted`,
-          time: formatTimeAgo(job.createdAt)
+          time: formatTimeAgo(job.createdAt),
+          details: `${job.description?.substring(0, 100)}${job.description?.length > 100 ? '...' : ''}`,
+          link: `/dashboard/jobs?id=${job.id}`
+        })),
+        ...recentWorkerActivity.map(shift => ({
+          id: shift.id,
+          type: 'worker' as const,
+          message: `${shift.worker.user.name} was assigned to ${shift.job.title}`,
+          time: formatTimeAgo(shift.createdAt),
+          details: `Shift: ${formatDate(shift.startTime)} - ${formatTime(shift.startTime)} to ${formatTime(shift.endTime)}`,
+          link: `/dashboard/workers?id=${shift.workerId}`
+        })),
+        ...recentMessages.map(msg => ({
+          id: msg.id,
+          type: 'message' as const,
+          message: msg.senderId === session.user.id 
+            ? `You sent a message to ${msg.receiver.name}`
+            : `You received a message from ${msg.sender.name}`,
+          time: formatTimeAgo(msg.createdAt),
+          details: `${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`,
+          link: `/dashboard/messages?id=${msg.conversationId}`
+        })),
+        ...recentReviews.map(review => ({
+          id: review.id,
+          type: 'review' as const,
+          message: `${review.worker.user.name} left a ${review.rating}-star review`,
+          time: formatTimeAgo(review.createdAt),
+          details: review.comment,
+          link: `/dashboard/reviews?id=${review.id}`
         }))
-      ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5)
+      ]
+      .sort((a, b) => {
+        const dateA = new Date(a.time.replace(' ago', ''))
+        const dateB = new Date(b.time.replace(' ago', ''))
+        return dateB.getTime() - dateA.getTime()
+      })
+      .slice(0, limit)
 
       return NextResponse.json(activities)
     } else {
@@ -84,7 +175,9 @@ export async function GET() {
         )
       }
 
-      const recentApplications = await prisma.application.findMany({
+      // Get recent applications
+      const recentApplications = filterType && filterType !== 'application' ? [] :
+        await prisma.application.findMany({
         where: { workerId: workerProfile.id },
         include: {
           job: {
@@ -94,24 +187,104 @@ export async function GET() {
           }
         },
         orderBy: { appliedAt: 'desc' },
-        take: 5
-      })
+          take: limit
+        })
 
-      const activities = recentApplications.map(app => {
-        let message = `You applied for ${app.job.title} position`
+      // Get recent shifts
+      const recentShifts = filterType && filterType !== 'shift' ? [] :
+        await prisma.shiftAssignment.findMany({
+          where: { workerId: workerProfile.id },
+          include: {
+            job: true,
+            restaurant: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        })
+
+      // Get recent messages
+      const recentMessages = filterType && filterType !== 'message' ? [] :
+        await prisma.message.findMany({
+          where: { 
+            OR: [
+              { senderId: session.user.id },
+              { receiverId: session.user.id }
+            ]
+          },
+          include: {
+            sender: true,
+            receiver: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit
+        })
+
+      // Get recent profile updates
+      const recentUpdates = filterType && filterType !== 'profile' ? [] :
+        await prisma.workerProfile.findMany({
+          where: { 
+            id: workerProfile.id,
+            updatedAt: {
+              gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: limit
+        })
+
+      const activities = [
+        ...recentApplications.map(app => {
+          let message = `You applied for ${app.job.title} at ${app.job.restaurant.name}`
         if (app.status === 'ACCEPTED') {
-          message = `Your application for ${app.job.title} position was approved`
+            message = `Your application for ${app.job.title} was approved`
         } else if (app.status === 'REJECTED') {
-          message = `Your application for ${app.job.title} position was declined`
+            message = `Your application for ${app.job.title} was declined`
+          } else if (app.status === 'INTERVIEWING') {
+            message = `You have an interview for ${app.job.title}`
         }
 
         return {
           id: app.id,
           type: 'application' as const,
           message,
-          time: formatTimeAgo(app.appliedAt)
-        }
+            time: formatTimeAgo(app.appliedAt),
+            details: app.coverLetter || `Status: ${app.status}`,
+            link: `/dashboard/applications?id=${app.id}`
+          }
+        }),
+        ...recentShifts.map(shift => ({
+          id: shift.id,
+          type: 'shift' as const,
+          message: `Shift assigned: ${shift.job.title} at ${shift.restaurant.name}`,
+          time: formatTimeAgo(shift.createdAt),
+          details: `${formatDate(shift.startTime)}: ${formatTime(shift.startTime)} - ${formatTime(shift.endTime)}`,
+          link: `/dashboard/schedule`
+        })),
+        ...recentMessages.map(msg => ({
+          id: msg.id,
+          type: 'message' as const,
+          message: msg.senderId === session.user.id 
+            ? `You sent a message to ${msg.receiver.name}`
+            : `You received a message from ${msg.sender.name}`,
+          time: formatTimeAgo(msg.createdAt),
+          details: `${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`,
+          link: `/dashboard/messages?id=${msg.conversationId}`
+        })),
+        ...recentUpdates.map(update => ({
+          id: update.id,
+          type: 'profile' as const,
+          message: 'You updated your profile',
+          time: formatTimeAgo(update.updatedAt),
+          details: 'Profile information was updated',
+          link: `/dashboard/profile/worker`
+        }))
+      ]
+      .sort((a, b) => {
+        const dateA = new Date(a.time.replace(' ago', ''))
+        const dateB = new Date(b.time.replace(' ago', ''))
+        return dateB.getTime() - dateA.getTime()
       })
+      .slice(0, limit)
 
       return NextResponse.json(activities)
     }
@@ -140,4 +313,19 @@ function formatTimeAgo(date: Date): string {
   } else {
     return 'Just now'
   }
+}
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }

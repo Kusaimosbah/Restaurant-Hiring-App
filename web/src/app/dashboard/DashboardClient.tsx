@@ -3,12 +3,35 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Session } from 'next-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import DashboardHeader from '@/components/DashboardHeader';
 import Sidebar from '@/components/Sidebar';
+import MobileSidebar from '@/components/MobileSidebar';
+
+// Import new dashboard components
+import StatsCard from '@/components/dashboard/StatsCard';
+import TrendChart from '@/components/dashboard/TrendChart';
+import PerformanceMetrics from '@/components/dashboard/PerformanceMetrics';
+import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import TaskList from '@/components/dashboard/TaskList';
+import WeeklySchedule from '@/components/dashboard/WeeklySchedule';
+import ApplicationStatus from '@/components/dashboard/ApplicationStatus';
+import ProfileCompletion from '@/components/dashboard/ProfileCompletion';
+import QuickActions from '@/components/dashboard/QuickActions';
+
+// Import icons
+import {
+  BriefcaseIcon,
+  DocumentTextIcon,
+  UserGroupIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  CurrencyDollarIcon,
+  ClockIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline';
 
 interface DashboardStats {
   totalJobs: number;
@@ -17,13 +40,56 @@ interface DashboardStats {
   pendingApplications: number;
   totalWorkers: number;
   activeWorkers: number;
+  metrics?: {
+    applicationRate: string;
+    averageHireTime: string;
+    workerRetention: number;
+    jobFillRate: string;
+  };
+  workerMetrics?: {
+    profileCompletion: number;
+    applicationStatuses: {
+      pending: number;
+      accepted: number;
+      rejected: number;
+      interviewing: number;
+      withdrawn: number;
+    };
+    upcomingShifts: Array<{
+      id: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      restaurant: string;
+      position: string;
+      earnings: number;
+    }>;
+    totalEarnings: number;
+  };
+  trends?: {
+    applications: number[];
+    hires?: number[];
+    revenue?: number[];
+    earnings?: number[];
+    hours?: number[];
+  };
 }
 
 interface RecentActivity {
   id: string;
-  type: 'application' | 'job' | 'worker';
+  type: 'application' | 'job' | 'worker' | 'message' | 'review' | 'shift' | 'profile';
   message: string;
   time: string;
+  details?: string;
+  link?: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority?: 'low' | 'medium' | 'high';
+  dueDate?: string;
 }
 
 export default function DashboardClient() {
@@ -39,6 +105,8 @@ export default function DashboardClient() {
     activeWorkers: 0,
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [activityFilter, setActivityFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isAdmin = sessionData?.user?.role === 'RESTAURANT_OWNER';
@@ -70,6 +138,13 @@ export default function DashboardClient() {
         setRecentActivity(activityData);
       }
 
+      // Fetch tasks
+      const tasksResponse = await fetch('/api/dashboard/tasks');
+      if (tasksResponse.ok) {
+        const tasksData = await tasksResponse.json();
+        setTasks(tasksData);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -77,48 +152,191 @@ export default function DashboardClient() {
     }
   };
 
-  const handleNavigateToJobs = () => {
-    router.push('/dashboard/jobs');
+  const handleActivityFilterChange = async (type: string | null) => {
+    setActivityFilter(type);
+    try {
+      const url = type ? `/api/dashboard/activity?type=${type}` : '/api/dashboard/activity';
+      const response = await fetch(url);
+      if (response.ok) {
+        const activityData = await response.json();
+        setRecentActivity(activityData);
+      }
+    } catch (error) {
+      console.error('Failed to filter activity:', error);
+    }
   };
 
-  const handleNavigateToApplications = () => {
-    router.push('/dashboard/applications');
+  const handleTaskToggle = async (id: string, completed: boolean) => {
+    try {
+      // Find the task and update its status
+      const updatedTasks = tasks.map(task => 
+        task.id === id ? { ...task, completed } : task
+      );
+      setTasks(updatedTasks);
+
+      // In a real app, we would save this to the server
+      await fetch('/api/dashboard/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTasks.find(task => task.id === id))
+      });
+    } catch (error) {
+      console.error('Failed to update task:', error);
+    }
   };
 
-  const handleNavigateToWorkers = () => {
-    router.push('/dashboard/workers');
+  const handleTaskAdd = async (task: Omit<Task, 'id'>) => {
+    try {
+      const response = await fetch('/api/dashboard/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task)
+      });
+
+      if (response.ok) {
+        const newTask = await response.json();
+        setTasks([...tasks, newTask]);
+      }
+    } catch (error) {
+      console.error('Failed to add task:', error);
+    }
   };
 
-  const handleNavigateToAnalytics = () => {
-    router.push('/dashboard/analytics');
+  const handleNavigate = (path: string) => {
+    router.push(path);
   };
 
-  const handleNavigateToProfile = () => {
-    router.push('/dashboard/profile');
+  // Generate last 6 months labels for charts
+  const getMonthLabels = () => {
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      months.push(date.toLocaleDateString('en-US', { month: 'short' }));
+    }
+    return months;
+  };
+  
+  const monthLabels = getMonthLabels();
+
+  // Convert worker profile sections to ProfileCompletion format
+  const getProfileSections = () => {
+    return [
+      {
+        id: 'personal-info',
+        name: 'Personal Information',
+        completed: true,
+        requiredForApplying: true,
+        link: '/dashboard/profile/worker'
+      },
+      {
+        id: 'skills',
+        name: 'Skills & Experience',
+        completed: true,
+        requiredForApplying: true,
+        link: '/dashboard/profile/worker'
+      },
+      {
+        id: 'certifications',
+        name: 'Certifications',
+        completed: false,
+        requiredForApplying: false,
+        link: '/dashboard/profile/worker'
+      },
+      {
+        id: 'documents',
+        name: 'Documents',
+        completed: false,
+        requiredForApplying: false,
+        link: '/dashboard/profile/worker'
+      }
+    ];
   };
 
-  const handleNavigateToSchedule = () => {
-    router.push('/dashboard/schedule');
+  // Sample data for worker's schedule
+  const getWorkerSchedule = () => {
+    return [
+      {
+        id: 'monday',
+        day: 'Monday',
+        startTime: '9:00 AM',
+        endTime: '5:00 PM',
+        location: 'Downtown',
+        position: 'Server'
+      },
+      {
+        id: 'tuesday',
+        day: 'Tuesday',
+        isOff: true
+      },
+      {
+        id: 'wednesday',
+        day: 'Wednesday',
+        startTime: '2:00 PM',
+        endTime: '10:00 PM',
+        location: 'Uptown',
+        position: 'Bartender'
+      },
+      {
+        id: 'thursday',
+        day: 'Thursday',
+        startTime: '9:00 AM',
+        endTime: '5:00 PM',
+        location: 'Downtown',
+        position: 'Server'
+      },
+      {
+        id: 'friday',
+        day: 'Friday',
+        startTime: '4:00 PM',
+        endTime: '12:00 AM',
+        location: 'Downtown',
+        position: 'Host'
+      },
+      {
+        id: 'saturday',
+        day: 'Saturday',
+        startTime: '12:00 PM',
+        endTime: '8:00 PM',
+        location: 'Uptown',
+        position: 'Server'
+      },
+      {
+        id: 'sunday',
+        day: 'Sunday',
+        isOff: true
+      }
+    ];
   };
 
-  const handleNavigateToTasks = () => {
-    router.push('/dashboard/tasks');
+  // Sample data for worker's applications
+  const getWorkerApplications = () => {
+    return [
+      {
+        id: 'app-1',
+        position: 'Server Position',
+        restaurant: 'The Golden Fork',
+        status: 'pending',
+        appliedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 'app-2',
+        position: 'Cook Position',
+        restaurant: 'Pasta Paradise',
+        status: 'approved',
+        appliedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 'app-3',
+        position: 'Bartender Position',
+        restaurant: 'Cocktail Corner',
+        status: 'interviewing',
+        appliedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
   };
-
-  const StatCard = ({ title, value, subtitle, color = 'blue' }: { 
-    title: string; 
-    value: number; 
-    subtitle: string; 
-    color?: string 
-  }) => (
-    <Card>
-      <CardContent className="p-6">
-        <div className={`text-2xl font-bold text-${color}-600`}>{value}</div>
-        <div className="text-sm font-medium text-gray-900 mt-1">{title}</div>
-        <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
-      </CardContent>
-    </Card>
-  );
 
   if (loading) {
     return (
@@ -143,208 +361,223 @@ export default function DashboardClient() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
+      <MobileSidebar />
       <div className="flex-1 overflow-auto">
         <DashboardHeader 
           title={isAdmin ? 'Admin Dashboard' : 'Worker Dashboard'}
           subtitle={isAdmin ? 'Manage your restaurant operations' : 'Track your job applications and shifts'}
         />
         
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {isAdmin ? (
               <>
-                <StatCard title="Total Jobs" value={stats.totalJobs} subtitle={`${stats.activeJobs} active`} color="blue" />
-                <StatCard title="Applications" value={stats.totalApplications} subtitle={`${stats.pendingApplications} pending`} color="green" />
-                <StatCard title="Workers" value={stats.totalWorkers} subtitle={`${stats.activeWorkers} active`} color="purple" />
+                <StatsCard 
+                  title="Total Jobs" 
+                  value={stats.totalJobs} 
+                  subtitle={`${stats.activeJobs} active`} 
+                  color="blue"
+                  trend={5}
+                  icon={<BriefcaseIcon className="h-5 w-5 text-blue-600" />}
+                  onClick={() => handleNavigate('/dashboard/jobs')}
+                />
+                <StatsCard 
+                  title="Applications" 
+                  value={stats.totalApplications} 
+                  subtitle={`${stats.pendingApplications} pending`} 
+                  color="green"
+                  trend={12}
+                  icon={<DocumentTextIcon className="h-5 w-5 text-green-600" />}
+                  onClick={() => handleNavigate('/dashboard/applications')}
+                />
+                <StatsCard 
+                  title="Workers" 
+                  value={stats.totalWorkers} 
+                  subtitle={`${stats.activeWorkers} active`} 
+                  color="purple"
+                  trend={-3}
+                  icon={<UserGroupIcon className="h-5 w-5 text-purple-600" />}
+                  onClick={() => handleNavigate('/dashboard/workers')}
+                />
+                <StatsCard 
+                  title="Job Fill Rate" 
+                  value={parseInt(stats.metrics?.jobFillRate || '0')} 
+                  subtitle="of positions filled" 
+                  color="yellow"
+                  icon={<ChartBarIcon className="h-5 w-5 text-yellow-600" />}
+                  onClick={() => handleNavigate('/dashboard/analytics')}
+                />
               </>
             ) : (
               <>
-                <StatCard title="Available Jobs" value={stats.activeJobs} subtitle="Jobs you can apply for" color="blue" />
-                <StatCard title="My Applications" value={stats.totalApplications} subtitle={`${stats.pendingApplications} pending`} color="green" />
-                <StatCard title="Profile Completion" value={85} subtitle="Complete your profile" color="yellow" />
+                <StatsCard 
+                  title="Available Jobs" 
+                  value={stats.activeJobs} 
+                  subtitle="Jobs you can apply for" 
+                  color="blue"
+                  icon={<BriefcaseIcon className="h-5 w-5 text-blue-600" />}
+                  onClick={() => handleNavigate('/dashboard/jobs')}
+                />
+                <StatsCard 
+                  title="My Applications" 
+                  value={stats.totalApplications} 
+                  subtitle={`${stats.pendingApplications} pending`} 
+                  color="green"
+                  icon={<DocumentTextIcon className="h-5 w-5 text-green-600" />}
+                  onClick={() => handleNavigate('/dashboard/applications')}
+                />
+                <StatsCard 
+                  title="Profile Completion" 
+                  value={stats.workerMetrics?.profileCompletion || 85} 
+                  subtitle="Complete your profile" 
+                  color="yellow"
+                  icon={<UserCircleIcon className="h-5 w-5 text-yellow-600" />}
+                  onClick={() => handleNavigate('/dashboard/profile/worker')}
+                />
+                <StatsCard 
+                  title="Total Earnings" 
+                  value={stats.workerMetrics?.totalEarnings || 0} 
+                  subtitle="This month" 
+                  color="purple"
+                  icon={<CurrencyDollarIcon className="h-5 w-5 text-purple-600" />}
+                  onClick={() => handleNavigate('/dashboard/analytics')}
+                />
               </>
             )}
           </div>
 
-          {/* Quick Actions & Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {isAdmin ? (
-                    <>
-                      <Button onClick={handleNavigateToJobs} className="w-full justify-start">
-                        + Post New Job
-                      </Button>
-                      <Button onClick={handleNavigateToApplications} variant="secondary" className="w-full justify-start">
-                        Review Applications ({stats.pendingApplications})
-                      </Button>
-                      <Button onClick={handleNavigateToWorkers} variant="outline" className="w-full justify-start">
-                        Manage Workers
-                      </Button>
-                      <Button onClick={handleNavigateToAnalytics} variant="outline" className="w-full justify-start">
-                        View Analytics
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button onClick={handleNavigateToJobs} className="w-full justify-start">
-                        Browse Jobs ({stats.activeJobs} available)
-                      </Button>
-                      <Button onClick={handleNavigateToProfile} variant="secondary" className="w-full justify-start">
-                        Update Profile
-                      </Button>
-                      <Button onClick={handleNavigateToApplications} variant="outline" className="w-full justify-start">
-                        View My Applications
-                      </Button>
-                      <Button onClick={handleNavigateToSchedule} variant="outline" className="w-full justify-start">
-                        Check Schedule
-                      </Button>
-                    </>
-                  )}
+          {/* Trend Charts - Only for Admin */}
+          {isAdmin && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <TrendChart 
+                title="Applications" 
+                data={stats.trends?.applications || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="green"
+              />
+              <TrendChart 
+                title="Hires" 
+                data={stats.trends?.hires || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="blue"
+              />
+              <TrendChart 
+                title="Revenue" 
+                data={stats.trends?.revenue || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="purple"
+              />
+            </div>
+          )}
+
+          {/* Trend Charts - Only for Worker */}
+          {!isAdmin && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <TrendChart 
+                title="Applications" 
+                data={stats.trends?.applications || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="green"
+              />
+              <TrendChart 
+                title="Earnings" 
+                data={stats.trends?.earnings || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="purple"
+              />
+              <TrendChart 
+                title="Hours Worked" 
+                data={stats.trends?.hours || [0, 0, 0, 0, 0, 0]} 
+                labels={monthLabels}
+                color="blue"
+              />
                 </div>
-              </CardContent>
-            </Card>
+          )}
+
+          {/* Quick Actions & Recent Activity */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            {/* Quick Actions */}
+            <QuickActions
+              isAdmin={isAdmin}
+              pendingApplications={stats.pendingApplications}
+              activeJobs={stats.activeJobs}
+              onNavigate={handleNavigate}
+            />
 
             {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivity.length > 0 ? (
-                    recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          activity.type === 'application' ? 'bg-green-500' :
-                          activity.type === 'job' ? 'bg-blue-500' : 'bg-purple-500'
-                        }`} />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-900">{activity.message}</p>
-                          <p className="text-xs text-gray-500">{activity.time}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No recent activity</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <ActivityFeed 
+              activities={recentActivity} 
+              title="Recent Activity"
+              loading={loading}
+              onFilterChange={handleActivityFilterChange}
+            />
           </div>
 
           {/* Additional Admin Features */}
           {isAdmin && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Performance Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Application Rate</span>
-                      <span className="text-sm font-medium">3.2 apps/job</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Avg. Hire Time</span>
-                      <span className="text-sm font-medium">5.3 days</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Worker Retention</span>
-                      <span className="text-sm font-medium">87%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Active Positions</span>
-                      <span className="text-sm font-medium">{stats.activeJobs}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <PerformanceMetrics
+                title="Performance Overview"
+                metrics={[
+                  { 
+                    label: 'Application Rate', 
+                    value: `${stats.metrics?.applicationRate || '0.0'} apps/job`, 
+                    trend: 5 
+                  },
+                  { 
+                    label: 'Avg. Hire Time', 
+                    value: `${stats.metrics?.averageHireTime || '0.0'} days`, 
+                    trend: -10 
+                  },
+                  { 
+                    label: 'Worker Retention', 
+                    value: `${stats.metrics?.workerRetention || 0}%`, 
+                    trend: 2 
+                  },
+                  { 
+                    label: 'Active Positions', 
+                    value: stats.activeJobs, 
+                    trend: 0 
+                  }
+                ]}
+              />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upcoming Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Review {stats.pendingApplications} pending applications</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Schedule interviews for Server position</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Update job descriptions</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <input type="checkbox" className="rounded" />
-                      <span className="text-sm">Send welcome email to new hires</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TaskList
+                title="Upcoming Tasks"
+                tasks={tasks}
+                loading={loading}
+                onTaskToggle={handleTaskToggle}
+                onTaskAdd={handleTaskAdd}
+              />
             </div>
           )}
 
           {/* Worker Specific Features */}
           {!isAdmin && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Application Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Server Position</span>
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Pending</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Cook Position</span>
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">Approved</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Bartender Position</span>
-                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">Interviewing</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <ApplicationStatus
+                applications={getWorkerApplications()}
+                loading={loading}
+                onViewDetails={(id) => handleNavigate(`/dashboard/applications?id=${id}`)}
+              />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>This Week's Schedule</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Monday</span>
-                      <span className="text-sm text-gray-600">9:00 AM - 5:00 PM</span>
+              <ProfileCompletion
+                sections={getProfileSections()}
+                completionPercentage={stats.workerMetrics?.profileCompletion || 85}
+                loading={loading}
+                onNavigate={handleNavigate}
+              />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Tuesday</span>
-                      <span className="text-sm text-gray-600">Off</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Wednesday</span>
-                      <span className="text-sm text-gray-600">2:00 PM - 10:00 PM</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Thursday</span>
-                      <span className="text-sm text-gray-600">9:00 AM - 5:00 PM</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          )}
+
+          {/* Worker Schedule */}
+          {!isAdmin && (
+            <div className="mt-4 sm:mt-6">
+              <WeeklySchedule
+                schedule={getWorkerSchedule()}
+                loading={loading}
+              />
             </div>
           )}
         </div>

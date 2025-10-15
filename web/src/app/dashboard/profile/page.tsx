@@ -2,10 +2,18 @@
 
 import BusinessProfile from '@/components/BusinessProfile';
 import { useSession } from 'next-auth/react';
-import JobSeekerProfile from '@/components/JobSeekerProfile';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role === 'WORKER') {
+      router.push('/dashboard/profile/worker');
+    }
+  }, [status, session, router]);
 
   if (status === 'loading') {
     return (
@@ -20,8 +28,13 @@ export default function ProfilePage() {
   if (session?.user?.role === 'RESTAURANT_OWNER') {
     return <BusinessProfile />;
   } else if (session?.user?.role === 'WORKER') {
-    // This will be implemented later
-    return <div>Job Seeker Profile will be implemented here.</div>;
+    // The useEffect hook will handle the redirect
+  return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <span className="ml-3 text-gray-600">Redirecting to worker profile...</span>
+                </div>
+    );
   }
 
   // Fallback for unauthenticated users

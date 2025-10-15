@@ -27,6 +27,10 @@ model User {
   refreshTokens           RefreshToken[]
   restaurant              Restaurant?
   workerProfile           WorkerProfile?
+  notifications           Notification[]
+  notificationPreference  NotificationPreference?
+  notificationDevices     NotificationDevice[]
+  trainingProgress        TrainingProgress[]
 
   @@map("users")
 }
@@ -45,16 +49,15 @@ model Restaurant {
   cuisineType         String?
   websiteUrl          String?
   address             Address?
-  applications        Application[]
-  jobs                Job[]
   locations           Location[]
-  onboardingDocuments OnboardingDocument[]
-  paymentInfo         PaymentInfo?
   photos              RestaurantPhoto[]
-  owner               User                 @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  reviewsReceived     ReviewRestaurant[]
-  reviewsGiven        ReviewWorker[]
+  paymentInfo         PaymentInfo?
+  owner               User                 @relation(fields: [ownerId], references: [id])
+  jobs                Job[]
+  applications        Application[]
   shiftAssignments    ShiftAssignment[]
+  reviewsToWorkers    ReviewWorker[]
+  reviewsFromWorkers  ReviewRestaurant[]
 
   @@map("restaurants")
 }
@@ -65,7 +68,7 @@ model Address {
   city         String
   state        String
   zipCode      String
-  country      String     @default("United States")
+  country      String
   latitude     Float?
   longitude    Float?
   restaurantId String     @unique
@@ -78,22 +81,19 @@ model Address {
 }
 
 model Location {
-  id             String     @id @default(cuid())
-  name           String
-  street         String
-  city           String
-  state          String
-  zipCode        String
-  country        String     @default("United States")
-  phone          String?
-  email          String?
-  isMainLocation Boolean    @default(false)
-  latitude       Float?
-  longitude      Float?
-  restaurantId   String
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  restaurant     Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  name         String
+  street       String
+  city         String
+  state        String
+  zipCode      String
+  country      String     @default("United States")
+  latitude     Float?
+  longitude    Float?
+  restaurantId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@index([restaurantId])
   @@map("locations")
@@ -133,40 +133,100 @@ model PaymentInfo {
 model WorkerProfile {
   id                String             @id @default(cuid())
   bio               String?
-  experience        String?
-  skills            String[]
+  experience        String?            // Keep for backward compatibility
+  skills            String[]           // Keep for backward compatibility
   hourlyRate        Float?
-  availability      String?
+  availability      String?            // Keep for backward compatibility
   userId            String             @unique
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   profilePictureUrl String?
-  resumeUrl         String?
+  resumeUrl         String?            // Keep for backward compatibility
+  
+  // New fields
+  title             String?
+  yearsOfExperience Int?
+  contactEmail      String?
+  contactPhone      String?
+  preferredContactMethod String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  
+  user              User               @relation(fields: [userId], references: [id])
   applications      Application[]
-  availabilitySlots AvailabilitySlot[]
-  reviewsGiven      ReviewRestaurant[]
-  reviewsReceived   ReviewWorker[]
   shiftAssignments  ShiftAssignment[]
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewsFromRestaurants ReviewWorker[]
+  reviewsToRestaurants ReviewRestaurant[]
+  workerSkills      WorkerSkill[]
+  certifications    Certification[]
+  documents         WorkerDocument[]
 
   @@map("worker_profiles")
 }
 
+model WorkerSkill {
+  id              String        @id @default(cuid())
+  name            String
+  level           SkillLevel
+  yearsExperience Int?
+  workerProfileId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([workerProfileId])
+  @@map("worker_skills")
+}
+
+model Certification {
+  id              String        @id @default(cuid())
+  name            String
+  issuer          String
+  issueDate       DateTime
+  expiryDate      DateTime?
+  documentUrl     String?
+  workerProfileId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([workerProfileId])
+  @@map("certifications")
+}
+
+model WorkerDocument {
+  id              String        @id @default(cuid())
+  name            String
+  type            DocumentType
+  fileUrl         String
+  fileSize        Int?
+  uploadDate      DateTime      @default(now())
+  workerProfileId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+
+  @@index([workerProfileId])
+  @@map("worker_documents")
+}
+
 model Job {
-  id               String            @id @default(cuid())
-  title            String
-  description      String
-  requirements     String?
-  hourlyRate       Float
-  startDate        DateTime
-  endDate          DateTime
-  status           JobStatus         @default(ACTIVE)
-  maxWorkers       Int               @default(1)
-  restaurantId     String
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  applications     Application[]
-  restaurant       Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  title           String
+  description     String
+  requirements    String?
+  hourlyRate      Float
+  startDate       DateTime
+  endDate         DateTime
+  status          String            @default("ACTIVE")
+  maxWorkers      Int               @default(1)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  restaurantId    String
+  restaurant      Restaurant        @relation(fields: [restaurantId], references: [id])
+  applications    Application[]
   shiftAssignments ShiftAssignment[]
 
   @@map("jobs")
@@ -174,8 +234,7 @@ model Job {
 
 model Application {
   id              String            @id @default(cuid())
-  message         String?
-  status          ApplicationStatus @default(PENDING)
+  status          String            @default("PENDING")
   appliedAt       DateTime          @default(now())
   respondedAt     DateTime?
   responseNote    String?
@@ -233,8 +292,8 @@ model ReviewRestaurant {
   rating       Int
   comment      String?
   isPublic     Boolean       @default(true)
-  restaurantId String
   workerId     String
+  restaurantId String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   restaurant   Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -243,116 +302,213 @@ model ReviewRestaurant {
   @@map("reviews_restaurant")
 }
 
-model OnboardingDocument {
-  id           String     @id @default(cuid())
-  name         String
-  documentType String
-  filePath     String
-  isVerified   Boolean    @default(false)
-  restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-
-  @@map("onboarding_documents")
-}
-
-model AvailabilitySlot {
-  id        String        @id @default(cuid())
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isActive  Boolean       @default(true)
-  workerId  String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  worker    WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
-
-  @@map("availability_slots")
-}
-
 model Message {
-  id            String       @id @default(cuid())
+  id            String      @id @default(cuid())
   content       String
-  isRead        Boolean      @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   senderId      String
-  receiverId    String
+  recipientId   String
   applicationId String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
+  recipient     User        @relation("ReceivedMessages", fields: [recipientId], references: [id])
   application   Application? @relation(fields: [applicationId], references: [id])
-  receiver      User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  sender        User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
 
-model RefreshToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  expiresAt DateTime
-  revoked   Boolean   @default(false)
-  revokedAt DateTime?
-  userId    String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("refresh_tokens")
-}
-
 model EmailVerificationToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
+  id        String   @id @default(cuid())
+  token     String   @unique
   expiresAt DateTime
-  used      Boolean   @default(false)
-  usedAt    DateTime?
   userId    String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("email_verification_tokens")
 }
 
 model PasswordResetToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
+  id        String   @id @default(cuid())
+  token     String   @unique
   expiresAt DateTime
-  used      Boolean   @default(false)
-  usedAt    DateTime?
   userId    String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
 }
 
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?            // Additional data specific to notification type
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  inAppEnabled       Boolean  @default(true)
+  emailEnabled       Boolean  @default(true)
+  pushEnabled        Boolean  @default(true)
+  applicationUpdates Boolean  @default(true)
+  messages           Boolean  @default(true)
+  jobPostings        Boolean  @default(true)
+  shiftReminders     Boolean  @default(true)
+  reviewsAndRatings  Boolean  @default(true)
+  paymentUpdates     Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model NotificationDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   // "ios", "android", "web"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notification_devices")
+}
+
+// New models for Training System
+model TrainingModule {
+  id                  String            @id @default(cuid())
+  title               String
+  description         String
+  order               Int
+  isRequired          Boolean           @default(true)
+  estimatedTimeMinutes Int
+  targetRole          Role
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  materials           TrainingMaterial[]
+  progress            TrainingProgress[]
+  
+  // Self-relation for prerequisites
+  prerequisites       TrainingModule[]  @relation("ModulePrerequisites")
+  requiredFor         TrainingModule[]  @relation("ModulePrerequisites")
+
+  @@map("training_modules")
+}
+
+model TrainingMaterial {
+  id                  String            @id @default(cuid())
+  title               String
+  description         String
+  type                MaterialType
+  content             String            // URL or JSON content
+  order               Int
+  estimatedTimeMinutes Int
+  moduleId            String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  module              TrainingModule    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress            TrainingProgress[]
+
+  @@index([moduleId])
+  @@map("training_materials")
+}
+
+model TrainingProgress {
+  id                  String            @id @default(cuid())
+  userId              String
+  materialId          String
+  moduleId            String
+  status              ProgressStatus    @default(NOT_STARTED)
+  score               Int?              // For quizzes
+  startedAt           DateTime?
+  completedAt         DateTime?
+  lastAccessedAt      DateTime?
+  timeSpentMinutes    Int               @default(0)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  material            TrainingMaterial  @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  module              TrainingModule    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, materialId])
+  @@index([userId])
+  @@index([materialId])
+  @@index([moduleId])
+  @@map("training_progress")
+}
+
 enum Role {
+  ADMIN
   RESTAURANT_OWNER
   WORKER
 }
 
-enum JobStatus {
-  DRAFT
-  ACTIVE
-  FILLED
-  CANCELLED
-}
-
-enum ApplicationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  WITHDRAWN
-}
-
 enum PhotoType {
-  INTERIOR
+  LOGO
   EXTERIOR
+  INTERIOR
   FOOD
   STAFF
-  MENU
   OTHER
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum DocumentType {
+  RESUME
+  CERTIFICATE
+  ID
+  WORK_PERMIT
+  REFERENCE
+  OTHER
+}
+
+enum NotificationType {
+  APPLICATION_STATUS
+  NEW_APPLICATION
+  NEW_MESSAGE
+  NEW_JOB
+  SHIFT_REMINDER
+  SHIFT_ASSIGNED
+  PAYMENT_UPDATE
+  NEW_REVIEW
+  SYSTEM_ALERT
+  PROFILE_VIEW
+}
+
+enum MaterialType {
+  VIDEO
+  DOCUMENT
+  QUIZ
+  INTERACTIVE
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import DashboardHeader from '@/components/DashboardHeader';
 import Sidebar from '@/components/Sidebar';
+import JobSearch from '@/components/jobs/JobSearch';
 
 interface Job {
   id: string;
@@ -21,7 +22,13 @@ interface Job {
   restaurant: {
     id: string;
     name: string;
-    address: string;
+    address?: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+    };
+    formattedAddress: string;
   };
   _count: {
     applications: number;
@@ -61,6 +68,7 @@ function JobsPageContent() {
 
   const loadJobs = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/jobs');
       if (response.ok) {
         const data = await response.json();
@@ -129,7 +137,25 @@ function JobsPageContent() {
     }
   };
 
-  if (loading) {
+  const handleSaveJob = async (jobId: string, saved: boolean) => {
+    try {
+      const response = await fetch('/api/jobs/saved', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ jobId, saved }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save job');
+      }
+    } catch (error) {
+      console.error('Failed to save job:', error);
+    }
+  };
+
+  if (loading && jobs.length === 0) {
     return (
       <div className="flex h-screen">
         <Sidebar />
@@ -149,183 +175,187 @@ function JobsPageContent() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar />
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
       <div className="flex-1 overflow-auto">
         <DashboardHeader 
-          title={isAdmin ? 'Manage Jobs' : 'Available Jobs'}
+          title={isAdmin ? 'Manage Jobs' : 'Find Jobs'}
           subtitle={isAdmin ? 'Create and manage job postings' : 'Browse and apply to jobs'}
         />
         
-        <div className="p-6">
-          {isAdmin && (
-            <div className="mb-6">
-              <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-                {showCreateForm ? 'Cancel' : '+ Post New Job'}
-              </Button>
-            </div>
-          )}
+        <div className="p-4 sm:p-6">
+          {isAdmin ? (
+            <>
+              <div className="mb-6">
+                <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+                  {showCreateForm ? 'Cancel' : '+ Post New Job'}
+                </Button>
+              </div>
 
-          {showCreateForm && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Create New Job</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateJob} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Job Title
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        value={newJob.title}
-                        onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Hourly Rate ($)
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        min="0"
-                        step="0.01"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        value={newJob.hourlyRate}
-                        onChange={(e) => setNewJob({ ...newJob, hourlyRate: parseFloat(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      required
-                      rows={3}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
-                      value={newJob.description}
-                      onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Requirements
-                    </label>
-                    <textarea
-                      rows={2}
-                      className="w-full border border-gray-300 rounded-md px-3 py-2"
-                      value={newJob.requirements}
-                      onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Start Date
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        value={newJob.startDate}
-                        onChange={(e) => setNewJob({ ...newJob, startDate: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        End Date
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        value={newJob.endDate}
-                        onChange={(e) => setNewJob({ ...newJob, endDate: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Max Workers
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2"
-                        value={newJob.maxWorkers}
-                        onChange={(e) => setNewJob({ ...newJob, maxWorkers: parseInt(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button type="submit">Create Job</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="grid grid-cols-1 gap-6">
-            {jobs.length > 0 ? (
-              jobs.map((job) => (
-                <Card key={job.id}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
+              {showCreateForm && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Create New Job</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateJob} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Job Title
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            value={newJob.title}
+                            onChange={(e) => setNewJob({ ...newJob, title: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Hourly Rate ($)
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            min="0"
+                            step="0.01"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            value={newJob.hourlyRate}
+                            onChange={(e) => setNewJob({ ...newJob, hourlyRate: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                      
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                        <p className="text-sm text-gray-600">{job.restaurant.name} • {job.restaurant.address}</p>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Description
+                        </label>
+                        <textarea
+                          required
+                          rows={3}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                          value={newJob.description}
+                          onChange={(e) => setNewJob({ ...newJob, description: e.target.value })}
+                        />
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-600">${job.hourlyRate}/hour</p>
-                        <p className="text-sm text-gray-500">{job._count.applications} applications</p>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Requirements
+                        </label>
+                        <textarea
+                          rows={2}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2"
+                          value={newJob.requirements}
+                          onChange={(e) => setNewJob({ ...newJob, requirements: e.target.value })}
+                        />
                       </div>
-                    </div>
-                    
-                    <p className="text-gray-700 mb-3">{job.description}</p>
-                    
-                    {job.requirements && (
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-1">Requirements:</h4>
-                        <p className="text-sm text-gray-600">{job.requirements}</p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Start Date
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            value={newJob.startDate}
+                            onChange={(e) => setNewJob({ ...newJob, startDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            End Date
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            value={newJob.endDate}
+                            onChange={(e) => setNewJob({ ...newJob, endDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Max Workers
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            min="1"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2"
+                            value={newJob.maxWorkers}
+                            onChange={(e) => setNewJob({ ...newJob, maxWorkers: parseInt(e.target.value) })}
+                          />
+                        </div>
                       </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                      <span>Start: {new Date(job.startDate).toLocaleDateString()}</span>
-                      <span>End: {new Date(job.endDate).toLocaleDateString()}</span>
-                      <span>Positions: {job.maxWorkers}</span>
-                    </div>
-                    
-                    {!isAdmin && (
-                      <Button onClick={() => handleApplyToJob(job.id)} className="w-full">
-                        Apply Now
-                      </Button>
-                    )}
+                      
+                      <div className="flex gap-2">
+                        <Button type="submit">Create Job</Button>
+                        <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
                   </CardContent>
                 </Card>
-              ))
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-gray-500">
-                    {isAdmin ? 'No jobs posted yet. Create your first job!' : 'No jobs available at the moment.'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+              )}
+              
+              <div className="grid grid-cols-1 gap-6">
+                {jobs.length > 0 ? (
+                  jobs.map((job) => (
+                    <Card key={job.id}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
+                            <p className="text-sm text-gray-600">{job.restaurant.name} • {job.restaurant.formattedAddress}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-green-600">${job.hourlyRate}/hour</p>
+                            <p className="text-sm text-gray-500">{job._count.applications} applications</p>
+                          </div>
+                        </div>
+                        
+                        <p className="text-gray-700 mb-3">{job.description}</p>
+                        
+                        {job.requirements && (
+                          <div className="mb-3">
+                            <h4 className="text-sm font-medium text-gray-900 mb-1">Requirements:</h4>
+                            <p className="text-sm text-gray-600">{job.requirements}</p>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                          <span>Start: {new Date(job.startDate).toLocaleDateString()}</span>
+                          <span>End: {new Date(job.endDate).toLocaleDateString()}</span>
+                          <span>Positions: {job.maxWorkers}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <p className="text-gray-500">
+                        No jobs posted yet. Create your first job!
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </>
+          ) : (
+            <JobSearch
+              initialJobs={jobs}
+              onApply={handleApplyToJob}
+              onSave={handleSaveJob}
+            />
+          )}
         </div>
       </div>
     </div>

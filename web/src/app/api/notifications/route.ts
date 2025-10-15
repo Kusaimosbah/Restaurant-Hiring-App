@@ -1,150 +1,163 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
 
-export async function GET() {
+// Schema for notification query parameters
+const queryParamsSchema = z.object({
+  limit: z.string().nullable().optional().transform(val => val && val !== 'null' ? parseInt(val) : 10),
+  page: z.string().nullable().optional().transform(val => val && val !== 'null' ? parseInt(val) : 1),
+  unreadOnly: z.string().nullable().optional().transform(val => val === 'true'),
+  type: z.string().nullable().optional().transform(val => val && val !== 'null' ? val : undefined)
+});
+
+// Schema for marking notifications as read
+const markReadSchema = z.object({
+  ids: z.array(z.string()).optional(),
+  markAll: z.boolean().optional().default(false)
+});
+
+/**
+ * GET /api/notifications
+ * Get user notifications with pagination and filtering
+ */
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const notifications = [];
+    const url = new URL(request.url);
+    const queryParams = {
+      limit: url.searchParams.get('limit'),
+      page: url.searchParams.get('page'),
+      unreadOnly: url.searchParams.get('unreadOnly'),
+      type: url.searchParams.get('type')
+    };
 
-    // Get unread messages count
-    const unreadMessages = await prisma.message.count({
+    const { limit, page, unreadOnly, type } = queryParamsSchema.parse(queryParams);
+    const skip = (page - 1) * limit;
+
+    // Build where clause based on filters
+    const where: any = { userId: session.user.id };
+
+    if (unreadOnly) {
+      where.isRead = false;
+    }
+
+    if (type && type !== undefined && type !== 'null') {
+      where.type = type;
+    }
+
+    // Get notifications with pagination
+    const [notifications, totalCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      }),
+      prisma.notification.count({ where })
+    ]);
+
+    // Get unread count
+    const unreadCount = await prisma.notification.count({
       where: {
-        receiverId: session.user.id,
+        userId: session.user.id,
         isRead: false
       }
     });
 
-    if (unreadMessages > 0) {
-      notifications.push({
-        id: 'messages',
-        type: 'messages',
-        title: 'New Messages',
-        message: `You have ${unreadMessages} unread message${unreadMessages > 1 ? 's' : ''}`,
-        count: unreadMessages,
-        href: '/dashboard/messages',
-        createdAt: new Date().toISOString()
-      });
-    }
-
-    // Get recent application updates for restaurant owners
-    if (session.user.role === 'RESTAURANT_OWNER') {
-      const recentApplications = await prisma.application.findMany({
-        where: {
-          restaurant: {
-            ownerId: session.user.id
-          },
-          appliedAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-          }
-        },
-        include: {
-          job: { select: { title: true } },
-          worker: { 
-            include: { 
-              user: { select: { name: true } } 
-            } 
-          }
-        },
-        orderBy: { appliedAt: 'desc' },
-        take: 5
-      });
-
-      recentApplications.forEach(app => {
-        notifications.push({
-          id: `application-${app.id}`,
-          type: 'application',
-          title: 'New Job Application',
-          message: `${app.worker.user.name} applied for ${app.job.title}`,
-          href: '/dashboard/applications',
-          createdAt: app.appliedAt.toISOString()
-        });
-      });
-    }
-
-    // Get application status updates for workers
-    if (session.user.role === 'WORKER') {
-      const statusUpdates = await prisma.application.findMany({
-        where: {
-          worker: {
-            userId: session.user.id
-          },
-          respondedAt: {
-            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-          }
-        },
-        include: {
-          job: { select: { title: true } },
-          restaurant: { select: { name: true } }
-        },
-        orderBy: { respondedAt: 'desc' },
-        take: 5
-      });
-
-      statusUpdates.forEach(app => {
-        const statusText = app.status === 'ACCEPTED' ? 'accepted' : 
-                          app.status === 'REJECTED' ? 'rejected' : 'updated';
-        
-        notifications.push({
-          id: `status-${app.id}`,
-          type: 'status',
-          title: 'Application Update',
-          message: `Your application for ${app.job.title} at ${app.restaurant.name} was ${statusText}`,
-          href: '/dashboard/applications',
-          createdAt: app.respondedAt?.toISOString() || app.appliedAt.toISOString()
-        });
-      });
-
-      // Get new job postings that match worker's skills
-      const workerProfile = await prisma.workerProfile.findUnique({
-        where: { userId: session.user.id },
-        select: { skills: true }
-      });
-
-      if (workerProfile?.skills && workerProfile.skills.length > 0) {
-        const newJobs = await prisma.job.findMany({
-          where: {
-            status: 'ACTIVE',
-            createdAt: {
-              gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-            }
-          },
-          include: {
-            restaurant: { select: { name: true } }
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3
-        });
-
-        newJobs.forEach(job => {
-          notifications.push({
-            id: `job-${job.id}`,
-            type: 'job',
-            title: 'New Job Posted',
-            message: `${job.restaurant.name} posted a new job: ${job.title}`,
-            href: '/dashboard/jobs',
-            createdAt: job.createdAt.toISOString()
-          });
-        });
-      }
-    }
-
-    // Sort notifications by date
-    notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
     return NextResponse.json({
-      notifications: notifications.slice(0, 10), // Limit to 10 most recent
-      totalCount: notifications.length,
-      unreadCount: notifications.filter(n => n.type === 'messages').reduce((sum, n) => sum + (n.count || 1), 0)
+      notifications,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        pages: Math.ceil(totalCount / limit)
+      },
+      unreadCount
     });
-
   } catch (error) {
     console.error('Error fetching notifications:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/notifications
+ * Mark notifications as read
+ */
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { ids, markAll } = markReadSchema.parse(body);
+
+    if (markAll) {
+      // Mark all notifications as read
+      await prisma.notification.updateMany({
+        where: { userId: session.user.id, isRead: false },
+        data: { 
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+
+      return NextResponse.json({ success: true, message: 'All notifications marked as read' });
+    } else if (ids && ids.length > 0) {
+      // Mark specific notifications as read
+      await prisma.notification.updateMany({
+        where: {
+          id: { in: ids },
+            userId: session.user.id
+          },
+        data: { 
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: `${ids.length} notification(s) marked as read` 
+      });
+    } else {
+      return NextResponse.json(
+        { error: 'No notifications specified to mark as read' },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error('Error updating notifications:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

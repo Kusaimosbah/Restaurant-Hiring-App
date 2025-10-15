@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
-import { Tab } from '@headlessui/react';
 import { Restaurant, Address, Location, RestaurantPhoto, PaymentInfo } from '@prisma/client';
 import BusinessDetailsForm from './BusinessDetailsForm';
 import AddressForm from './AddressForm';
 import LocationsManager from './LocationsManager';
 import PhotoGallery from './PhotoGallery';
 import PaymentInfoForm from './PaymentInfoForm';
+import ResponsiveTabs from './ui/ResponsiveTabs';
 import './BusinessProfile.css';
 
 // Define types for the profile data
@@ -186,415 +186,420 @@ export default function BusinessProfile() {
         <ErrorState error={profileData.error} />
       ) : (
         <div className="bg-white rounded-lg shadow-md">
-          <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
-            <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-t-lg business-profile-tabs">
-              {tabs.map((tab) => (
-                <Tab
-                  key={tab.id}
-                  className={({ selected }: { selected: boolean }) =>
-                    `w-full py-3 text-sm font-medium rounded-md transition-colors ${
-                      selected
-                        ? 'bg-white text-indigo-600 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                    }`
-                  }
-                >
-                  {tab.name}
-                </Tab>
-              ))}
-            </Tab.List>
-            
-            <Tab.Panels className="p-6">
-              {/* Business Details Panel */}
-              <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Business Information</h2>
-                <p className="text-gray-500 mb-6">
-                  Update your restaurant's basic information, including name, description, and business type.
-                </p>
-                
-                <BusinessDetailsForm 
-                  initialData={{
-                    name: profileData.restaurant?.name || '',
-                    description: profileData.restaurant?.description || '',
-                    phone: profileData.restaurant?.phone || '',
-                    email: profileData.restaurant?.email || '',
-                    businessType: profileData.restaurant?.businessType || '',
-                    cuisineType: profileData.restaurant?.cuisineType || '',
-                    websiteUrl: profileData.restaurant?.websiteUrl || '',
-                    logoUrl: profileData.restaurant?.logoUrl || ''
-                  }}
-                  onSubmit={handleSaveBusinessDetails}
-                  isLoading={isSaving}
-                />
-              </Tab.Panel>
-              
-              {/* Address Panel */}
-              <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Business Address</h2>
-                <p className="text-gray-500 mb-6">
-                  Update your restaurant's primary address information.
-                </p>
-                
-                <AddressForm 
-                  initialData={profileData.restaurant?.address || {}}
-                  onSubmit={handleSaveAddress}
-                  isLoading={isSaving}
-                />
-              </Tab.Panel>
-              
-              {/* Locations Panel */}
-              <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Multiple Locations</h2>
-                <p className="text-gray-500 mb-6">
-                  Manage all your restaurant locations. Add new branches or update existing ones.
-                </p>
-                
-                <LocationsManager
-                  locations={profileData.restaurant?.locations || []}
-                  onAddLocation={async (locationData) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch('/api/restaurant/locations', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(locationData),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to add location: ${response.status}`);
-                      }
-                      
-                      const newLocation = await response.json();
-                      
-                      // Update the local state with the new location
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          locations: [...(prev.restaurant?.locations || []), newLocation],
-                        },
-                      }));
-                      
-                      alert('Location added successfully!');
-                    } catch (error) {
-                      console.error('Error adding location:', error);
-                      alert('Failed to add location. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onUpdateLocation={async (id, locationData) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch(`/api/restaurant/locations/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(locationData),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to update location: ${response.status}`);
-                      }
-                      
-                      const updatedLocation = await response.json();
-                      
-                      // Update the local state with the updated location
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          locations: prev.restaurant?.locations.map(loc => 
-                            loc.id === id ? updatedLocation : loc
-                          ) || [],
-                        },
-                      }));
-                      
-                      alert('Location updated successfully!');
-                    } catch (error) {
-                      console.error('Error updating location:', error);
-                      alert('Failed to update location. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onDeleteLocation={async (id) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch(`/api/restaurant/locations/${id}`, {
-                        method: 'DELETE',
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to delete location: ${response.status}`);
-                      }
-                      
-                      // Update the local state by removing the deleted location
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          locations: prev.restaurant?.locations.filter(loc => loc.id !== id) || [],
-                        },
-                      }));
-                      
-                      alert('Location deleted successfully!');
-                    } catch (error) {
-                      console.error('Error deleting location:', error);
-                      alert('Failed to delete location. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onSetMainLocation={async (id) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch(`/api/restaurant/locations/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ isMainLocation: true }),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to set main location: ${response.status}`);
-                      }
-                      
-                      // Update the local state to reflect the new main location
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          locations: prev.restaurant?.locations.map(loc => ({
-                            ...loc,
-                            isMainLocation: loc.id === id,
-                          })) || [],
-                        },
-                      }));
-                      
-                      alert('Main location updated successfully!');
-                    } catch (error) {
-                      console.error('Error setting main location:', error);
-                      alert('Failed to set main location. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  isLoading={isSaving}
-                />
-              </Tab.Panel>
-              
-              {/* Photos Panel */}
-              <Tab.Panel>
-                <h2 className="text-xl font-semibold mb-4">Photo Gallery</h2>
-                <p className="text-gray-500 mb-6">
-                  Upload and manage photos of your restaurant, food, and staff.
-                </p>
-                
-                <PhotoGallery
-                  photos={profileData.restaurant?.photos || []}
-                  onAddPhoto={async (photoData) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch('/api/restaurant/photos', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(photoData),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to add photo: ${response.status}`);
-                      }
-                      
-                      const newPhoto = await response.json();
-                      
-                      // Update the local state with the new photo
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          photos: [...(prev.restaurant?.photos || []), newPhoto],
-                        },
-                      }));
-                      
-                      alert('Photo uploaded successfully!');
-                    } catch (error) {
-                      console.error('Error adding photo:', error);
-                      alert('Failed to upload photo. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onUpdatePhoto={async (id, photoData) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch(`/api/restaurant/photos/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(photoData),
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to update photo: ${response.status}`);
-                      }
-                      
-                      const updatedPhoto = await response.json();
-                      
-                      // Update the local state with the updated photo
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          photos: prev.restaurant?.photos.map(photo => 
-                            photo.id === id ? updatedPhoto : photo
-                          ) || [],
-                        },
-                      }));
-                      
-                      alert('Photo updated successfully!');
-                    } catch (error) {
-                      console.error('Error updating photo:', error);
-                      alert('Failed to update photo. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onDeletePhoto={async (id) => {
-                    try {
-                      setIsSaving(true);
-                      
-                      const response = await fetch(`/api/restaurant/photos/${id}`, {
-                        method: 'DELETE',
-                      });
-                      
-                      if (!response.ok) {
-                        throw new Error(`Failed to delete photo: ${response.status}`);
-                      }
-                      
-                      // Update the local state by removing the deleted photo
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          photos: prev.restaurant?.photos.filter(photo => photo.id !== id) || [],
-                        },
-                      }));
-                      
-                      alert('Photo deleted successfully!');
-                    } catch (error) {
-                      console.error('Error deleting photo:', error);
-                      alert('Failed to delete photo. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  isLoading={isSaving}
-                />
-              </Tab.Panel>
-              
-              {/* Payment Panel */}
-              <Tab.Panel>
-                <PaymentInfoForm
-                  initialData={profileData.restaurant?.paymentInfo || {}}
-                  onSubmit={async (data) => {
-                    try {
-                      setIsSaving(true);
-
-                      const response = await fetch('/api/restaurant/payment', {
-                        method: 'PUT',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data),
-                      });
-
-                      if (!response.ok) {
-                        throw new Error(`Failed to update payment info: ${response.status}`);
-                      }
-
-                      const updatedPaymentInfo = await response.json();
-
-                      // Update the local state with the updated payment info
-                      setProfileData(prev => ({
-                        ...prev,
-                        restaurant: {
-                          ...prev.restaurant!,
-                          paymentInfo: updatedPaymentInfo,
-                        },
-                      }));
-
-                      alert('Payment information saved successfully!');
-                    } catch (error) {
-                      console.error('Error saving payment information:', error);
-                      alert('Failed to save payment information. Please try again.');
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
-                  onConnectStripe={async () => {
-                    try {
-                      setIsSaving(true);
-
-                      // In a real app, this would redirect to Stripe Connect OAuth flow
-                      // For demo purposes, we'll simulate connecting to Stripe
-                      setTimeout(() => {
-                        // Create a mock payment info object that matches the PaymentInfo type
-                        const mockPaymentInfo: PaymentInfo = {
-                          id: 'payment_' + Math.random().toString(36).substring(2, 15),
-                          createdAt: new Date(),
-                          updatedAt: new Date(),
-                          restaurantId: profileData.restaurant?.id || '',
-                          stripeCustomerId: 'cus_' + Math.random().toString(36).substring(2, 15),
-                          stripeAccountId: 'acct_' + Math.random().toString(36).substring(2, 15),
-                          bankAccountLast4: profileData.restaurant?.paymentInfo?.bankAccountLast4 || null,
-                          cardLast4: profileData.restaurant?.paymentInfo?.cardLast4 || null,
-                          isVerified: true
-                        };
-
-                        setProfileData(prev => {
-                          if (!prev.restaurant) return prev;
-
-                          return {
+          <ResponsiveTabs
+            tabs={[
+              {
+                id: 'details',
+                name: 'Business Details',
+                content: (
+                  <>
+                    <h2 className="text-xl font-semibold mb-4">Business Information</h2>
+                    <p className="text-gray-500 mb-6">
+                      Update your restaurant's basic information, including name, description, and business type.
+                    </p>
+                    
+                    <BusinessDetailsForm 
+                      initialData={{
+                        name: profileData.restaurant?.name || '',
+                        description: profileData.restaurant?.description || '',
+                        phone: profileData.restaurant?.phone || '',
+                        email: profileData.restaurant?.email || '',
+                        businessType: profileData.restaurant?.businessType || '',
+                        cuisineType: profileData.restaurant?.cuisineType || '',
+                        websiteUrl: profileData.restaurant?.websiteUrl || '',
+                        logoUrl: profileData.restaurant?.logoUrl || ''
+                      }}
+                      onSubmit={handleSaveBusinessDetails}
+                      isLoading={isSaving}
+                    />
+                  </>
+                )
+              },
+              {
+                id: 'address',
+                name: 'Address',
+                content: (
+                  <>
+                    <h2 className="text-xl font-semibold mb-4">Business Address</h2>
+                    <p className="text-gray-500 mb-6">
+                      Update your restaurant's primary address information.
+                    </p>
+                    
+                    <AddressForm 
+                      initialData={profileData.restaurant?.address || {}}
+                      onSubmit={handleSaveAddress}
+                      isLoading={isSaving}
+                    />
+                  </>
+                )
+              },
+              {
+                id: 'locations',
+                name: 'Locations',
+                content: (
+                  <>
+                    <h2 className="text-xl font-semibold mb-4">Multiple Locations</h2>
+                    <p className="text-gray-500 mb-6">
+                      Manage all your restaurant locations. Add new branches or update existing ones.
+                    </p>
+                    
+                    <LocationsManager
+                      locations={profileData.restaurant?.locations || []}
+                      onAddLocation={async (locationData) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch('/api/restaurant/locations', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(locationData),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to add location: ${response.status}`);
+                          }
+                          
+                          const newLocation = await response.json();
+                          
+                          // Update the local state with the new location
+                          setProfileData(prev => ({
                             ...prev,
                             restaurant: {
-                              ...prev.restaurant,
-                              paymentInfo: mockPaymentInfo
-                            }
-                          };
+                              ...prev.restaurant!,
+                              locations: [...(prev.restaurant?.locations || []), newLocation],
+                            },
+                          }));
+                          
+                          alert('Location added successfully!');
+                        } catch (error) {
+                          console.error('Error adding location:', error);
+                          alert('Failed to add location. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      onUpdateLocation={async (id, locationData) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch(`/api/restaurant/locations/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(locationData),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to update location: ${response.status}`);
+                          }
+                          
+                          const updatedLocation = await response.json();
+                          
+                          // Update the local state with the updated location
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              locations: prev.restaurant?.locations.map(loc => 
+                                loc.id === id ? updatedLocation : loc
+                              ) || [],
+                            },
+                          }));
+                          
+                          alert('Location updated successfully!');
+                        } catch (error) {
+                          console.error('Error updating location:', error);
+                          alert('Failed to update location. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      onDeleteLocation={async (id) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch(`/api/restaurant/locations/${id}`, {
+                            method: 'DELETE',
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to delete location: ${response.status}`);
+                          }
+                          
+                          // Update the local state by removing the deleted location
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              locations: prev.restaurant?.locations.filter(loc => loc.id !== id) || [],
+                            },
+                          }));
+                          
+                          alert('Location deleted successfully!');
+                        } catch (error) {
+                          console.error('Error deleting location:', error);
+                          alert('Failed to delete location. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      onSetMainLocation={async (id) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch(`/api/restaurant/locations/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ isMainLocation: true }),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to set main location: ${response.status}`);
+                          }
+                          
+                          // Update the local state to reflect the new main location
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              locations: prev.restaurant?.locations.map(loc => ({
+                                ...loc,
+                                isMainLocation: loc.id === id,
+                              })) || [],
+                            },
+                          }));
+                          
+                          alert('Main location updated successfully!');
+                        } catch (error) {
+                          console.error('Error setting main location:', error);
+                          alert('Failed to set main location. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      isLoading={isSaving}
+                    />
+                  </>
+                )
+              },
+              {
+                id: 'photos',
+                name: 'Photos',
+                content: (
+                  <>
+                    <h2 className="text-xl font-semibold mb-4">Photo Gallery</h2>
+                    <p className="text-gray-500 mb-6">
+                      Upload and manage photos of your restaurant, food, and staff.
+                    </p>
+                    
+                    <PhotoGallery
+                      photos={profileData.restaurant?.photos || []}
+                      onAddPhoto={async (photoData) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch('/api/restaurant/photos', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(photoData),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to add photo: ${response.status}`);
+                          }
+                          
+                          const newPhoto = await response.json();
+                          
+                          // Update the local state with the new photo
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              photos: [...(prev.restaurant?.photos || []), newPhoto],
+                            },
+                          }));
+                          
+                          alert('Photo uploaded successfully!');
+                        } catch (error) {
+                          console.error('Error adding photo:', error);
+                          alert('Failed to upload photo. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      onUpdatePhoto={async (id, photoData) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch(`/api/restaurant/photos/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(photoData),
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to update photo: ${response.status}`);
+                          }
+                          
+                          const updatedPhoto = await response.json();
+                          
+                          // Update the local state with the updated photo
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              photos: prev.restaurant?.photos.map(photo => 
+                                photo.id === id ? updatedPhoto : photo
+                              ) || [],
+                            },
+                          }));
+                          
+                          alert('Photo updated successfully!');
+                        } catch (error) {
+                          console.error('Error updating photo:', error);
+                          alert('Failed to update photo. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      onDeletePhoto={async (id) => {
+                        try {
+                          setIsSaving(true);
+                          
+                          const response = await fetch(`/api/restaurant/photos/${id}`, {
+                            method: 'DELETE',
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error(`Failed to delete photo: ${response.status}`);
+                          }
+                          
+                          // Update the local state by removing the deleted photo
+                          setProfileData(prev => ({
+                            ...prev,
+                            restaurant: {
+                              ...prev.restaurant!,
+                              photos: prev.restaurant?.photos.filter(photo => photo.id !== id) || [],
+                            },
+                          }));
+                          
+                          alert('Photo deleted successfully!');
+                        } catch (error) {
+                          console.error('Error deleting photo:', error);
+                          alert('Failed to delete photo. Please try again.');
+                        } finally {
+                          setIsSaving(false);
+                        }
+                      }}
+                      isLoading={isSaving}
+                    />
+                  </>
+                )
+              },
+              {
+                id: 'payment',
+                name: 'Payment',
+                content: (
+                  <PaymentInfoForm
+                    initialData={profileData.restaurant?.paymentInfo || {}}
+                    onSubmit={async (data) => {
+                      try {
+                        setIsSaving(true);
+  
+                        const response = await fetch('/api/restaurant/payment', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(data),
                         });
-
-                        alert('Successfully connected to Stripe!');
+  
+                        if (!response.ok) {
+                          throw new Error(`Failed to update payment info: ${response.status}`);
+                        }
+  
+                        const updatedPaymentInfo = await response.json();
+  
+                        // Update the local state with the updated payment info
+                        setProfileData(prev => ({
+                          ...prev,
+                          restaurant: {
+                            ...prev.restaurant!,
+                            paymentInfo: updatedPaymentInfo,
+                          },
+                        }));
+  
+                        alert('Payment information saved successfully!');
+                      } catch (error) {
+                        console.error('Error saving payment information:', error);
+                        alert('Failed to save payment information. Please try again.');
+                      } finally {
                         setIsSaving(false);
-                      }, 2000);
-
-                    } catch (error) {
-                      console.error('Error connecting to Stripe:', error);
-                      alert('Failed to connect to Stripe. Please try again.');
-                      setIsSaving(false);
-                    }
-                  }}
-                  onCancel={() => {
-                    alert('Payment changes cancelled');
-                  }}
-                  isLoading={isSaving}
-                />
-              </Tab.Panel>
-            </Tab.Panels>
-          </Tab.Group>
+                      }
+                    }}
+                    onConnectStripe={async () => {
+                      try {
+                        setIsSaving(true);
+  
+                        // In a real app, this would redirect to Stripe Connect OAuth flow
+                        // For demo purposes, we'll simulate connecting to Stripe
+                        setTimeout(() => {
+                          // Create a mock payment info object that matches the PaymentInfo type
+                          const mockPaymentInfo: PaymentInfo = {
+                            id: 'payment_' + Math.random().toString(36).substring(2, 15),
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            restaurantId: profileData.restaurant?.id || '',
+                            stripeCustomerId: 'cus_' + Math.random().toString(36).substring(2, 15),
+                            stripeAccountId: 'acct_' + Math.random().toString(36).substring(2, 15),
+                            bankAccountLast4: profileData.restaurant?.paymentInfo?.bankAccountLast4 || null,
+                            cardLast4: profileData.restaurant?.paymentInfo?.cardLast4 || null,
+                            isVerified: true
+                          };
+  
+                          setProfileData(prev => {
+                            if (!prev.restaurant) return prev;
+  
+                            return {
+                              ...prev,
+                              restaurant: {
+                                ...prev.restaurant,
+                                paymentInfo: mockPaymentInfo
+                              }
+                            };
+                          });
+  
+                          alert('Successfully connected to Stripe!');
+                          setIsSaving(false);
+                        }, 2000);
+  
+                      } catch (error) {
+                        console.error('Error connecting to Stripe:', error);
+                        alert('Failed to connect to Stripe. Please try again.');
+                        setIsSaving(false);
+                      }
+                    }}
+                    onCancel={() => {
+                      alert('Payment changes cancelled');
+                    }}
+                    isLoading={isSaving}
+                  />
+                )
+              }
+            ]}
+            defaultTab={activeTab}
+            onChange={setActiveTab}
+            className="business-profile-tabs"
+          />
         </div>
       )}
     </div>

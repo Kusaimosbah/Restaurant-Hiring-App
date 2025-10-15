@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { prisma } from '../prisma'
-import { emailService } from './emailService'
+import { sendEmail } from './emailService'
 
 // Define types based on our schema
 type Role = 'RESTAURANT_OWNER' | 'WORKER'
@@ -322,7 +322,12 @@ export class AuthService {
 
     // Send password reset email
     try {
-      await emailService.sendPasswordResetEmail(email, resetToken)
+      await sendEmail({
+        to: email,
+        subject: 'Password Reset',
+        text: `Click this link to reset your password: ${resetLink}`,
+        html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>`
+      })
       console.log(`✅ Password reset email sent to ${email}`)
     } catch (error) {
       console.error(`❌ Failed to send password reset email to ${email}:`, error)
