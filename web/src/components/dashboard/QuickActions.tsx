@@ -22,7 +22,7 @@ interface ActionItem {
   id: string;
   label: string;
   icon: React.ReactNode;
-  variant?: 'default' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline';
   path: string;
   badge?: number;
   highlight?: boolean;
@@ -50,7 +50,7 @@ export default function QuickActions({
       id: 'post-job',
       label: 'Post New Job',
       icon: <PlusIcon className="h-5 w-5" />,
-      variant: 'default',
+      variant: 'primary',
       path: '/dashboard/jobs/new',
       highlight: true,
     },
@@ -97,7 +97,7 @@ export default function QuickActions({
       id: 'browse-jobs',
       label: `Browse Jobs`,
       icon: <MagnifyingGlassIcon className="h-5 w-5" />,
-      variant: 'default',
+      variant: 'primary',
       path: '/dashboard/jobs',
       badge: activeJobs,
       highlight: true,
@@ -167,7 +167,7 @@ export default function QuickActions({
               onMouseLeave={() => setHoveredAction(null)}
             >
               <div className="flex items-center w-full">
-                <div className={`mr-3 ${action.variant === 'default' ? 'text-white' : ''}`}>
+                <div className={`mr-3 ${action.variant === 'primary' ? 'text-white' : ''}`}>
                   {action.icon}
                 </div>
                 <span className="flex-grow">{action.label}</span>
@@ -175,7 +175,7 @@ export default function QuickActions({
                   <span className={`
                     inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none 
                     rounded-full ml-2 
-                    ${action.variant === 'default' 
+                    ${action.variant === 'primary' 
                       ? 'bg-white text-indigo-600' 
                       : 'bg-indigo-100 text-indigo-600'}
                   `}>

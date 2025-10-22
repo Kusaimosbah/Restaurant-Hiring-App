@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
@@ -62,6 +63,7 @@ interface ProgressSummary {
 
 export default function TrainingDashboard() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [modules, setModules] = useState<TrainingModule[]>([]);
   const [inProgressModules, setInProgressModules] = useState<TrainingModule[]>([]);
   const [completedModules, setCompletedModules] = useState<TrainingModule[]>([]);
@@ -170,7 +172,7 @@ export default function TrainingDashboard() {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-lg">{module.title}</CardTitle>
-              {isRequired && (
+              {module.isRequired && (
                 <Badge variant="outline" className="ml-2">Required</Badge>
               )}
             </div>
@@ -244,10 +246,10 @@ export default function TrainingDashboard() {
           
           <div className="flex justify-end">
             <Button 
-              variant={isCompleted ? "outline" : "default"}
+              variant={isCompleted ? "outline" : "primary"}
               size="sm"
               disabled={isLocked}
-              href={`/training/modules/${module.id}`}
+              onClick={() => router.push(`/training/modules/${module.id}`)}
             >
               {isCompleted ? 'Review' : isInProgress ? 'Continue' : 'Start'}
             </Button>

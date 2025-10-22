@@ -9,9 +9,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!notification) {
@@ -56,9 +57,10 @@ export async function GET(
  */
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -69,7 +71,7 @@ export async function PUT(
     }
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!notification) {
@@ -89,10 +91,9 @@ export async function PUT(
 
     // Mark as read
     const updatedNotification = await prisma.notification.update({
-      where: { id: params.id },
+      where: { id },
       data: { 
-        isRead: true,
-        readAt: new Date()
+        isRead: true
       }
     });
 
@@ -112,9 +113,10 @@ export async function PUT(
  */
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -125,7 +127,7 @@ export async function DELETE(
     }
 
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!notification) {
@@ -145,7 +147,7 @@ export async function DELETE(
 
     // Delete notification
     await prisma.notification.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({ 

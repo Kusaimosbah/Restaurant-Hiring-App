@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
@@ -49,13 +50,13 @@ export async function GET() {
             // Match based on worker's skills (in job title or description)
             ...workerSkills.map(skill => ({
               OR: [
-                { title: { contains: skill, mode: 'insensitive' } },
-                { description: { contains: skill, mode: 'insensitive' } },
+                { title: { contains: skill, mode: Prisma.QueryMode.insensitive } },
+                { description: { contains: skill, mode: Prisma.QueryMode.insensitive } },
               ],
             })),
             // Match based on job titles the worker has applied to before
             ...appliedJobTitles.map(title => ({
-              title: { contains: title, mode: 'insensitive' },
+              title: { contains: title, mode: Prisma.QueryMode.insensitive },
             })),
           ],
           // Exclude jobs the worker has already applied to

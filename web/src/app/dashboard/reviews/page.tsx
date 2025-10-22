@@ -14,7 +14,8 @@ import {
   ReviewForm, 
   ReputationDisplay,
   ReviewSummaryData,
-  Review as ReviewType
+  Review as ReviewType,
+  StarRating
 } from '@/components/reviews';
 
 // Convert API response to our component format

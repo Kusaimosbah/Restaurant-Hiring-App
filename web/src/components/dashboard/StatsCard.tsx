@@ -88,15 +88,18 @@ export default function StatsCard({
   };
 
   return (
-    <Card
-      className={`border ${colorMap[color].border} ${
-        onClick ? `cursor-pointer ${colorMap[color].hover} transition-all` : ''
-      }`}
+    <div
+      className={onClick ? 'cursor-pointer' : ''}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      <CardContent className={`p-6 ${colorMap[color].bg}`}>
+      <Card
+        className={`border ${colorMap[color].border} ${
+          onClick ? `${colorMap[color].hover} transition-all` : ''
+        }`}
+      >
+        <CardContent className={`p-6 ${colorMap[color].bg}`}>
         <div className="flex justify-between items-start">
           <div>
             <div className="flex items-center space-x-2">
@@ -132,5 +135,6 @@ export default function StatsCard({
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

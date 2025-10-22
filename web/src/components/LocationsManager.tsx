@@ -1,9 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Location } from '@prisma/client';
 import { Form, FormField, FormSection, FormActions } from '@/components/ui/Form';
 import { Button } from '@/components/ui/Button';
+
+// Temporary Location type since it's not available from current Prisma schema
+interface Location {
+  id: string;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  createdAt: Date;
+  updatedAt: Date;
+  restaurantId: string;
+  phone?: string;
+  email?: string;
+  isMainLocation?: boolean;
+}
 
 // US States for dropdown
 const usStates = [
@@ -146,9 +164,9 @@ export default function LocationsManager({
           state: locationToEdit.state,
           zipCode: locationToEdit.zipCode,
           country: locationToEdit.country,
-          phone: locationToEdit.phone || '',
-          email: locationToEdit.email || '',
-          isMainLocation: locationToEdit.isMainLocation,
+          phone: (locationToEdit as any).phone || '',
+          email: (locationToEdit as any).email || '',
+          isMainLocation: (locationToEdit as any).isMainLocation || false,
           latitude: locationToEdit.latitude,
           longitude: locationToEdit.longitude,
         });
@@ -323,7 +341,7 @@ export default function LocationsManager({
                             Set as Main
                           </Button>
                           <Button 
-                            variant="destructive" 
+                            variant="danger" 
                             size="sm"
                             onClick={() => handleDelete(location.id)}
                           >

@@ -111,7 +111,7 @@ export default function StatsPage() {
   // Generate labels based on time range
   const getLabels = () => {
     const labels = [];
-    let format = { month: 'short' };
+    let format: Intl.DateTimeFormatOptions = { month: 'short' };
     let count = 6;
     let step = 1;
     
@@ -187,35 +187,35 @@ export default function StatsPage() {
           <div className="flex justify-between items-center mb-6">
             <div className="flex space-x-2">
               <Button 
-                variant={timeRange === '7d' ? 'default' : 'outline'} 
+                variant={timeRange === '7d' ? 'primary' : 'outline'} 
                 onClick={() => setTimeRange('7d')}
                 size="sm"
               >
                 7 Days
               </Button>
               <Button 
-                variant={timeRange === '30d' ? 'default' : 'outline'} 
+                variant={timeRange === '30d' ? 'primary' : 'outline'} 
                 onClick={() => setTimeRange('30d')}
                 size="sm"
               >
                 30 Days
               </Button>
               <Button 
-                variant={timeRange === '90d' ? 'default' : 'outline'} 
+                variant={timeRange === '90d' ? 'primary' : 'outline'} 
                 onClick={() => setTimeRange('90d')}
                 size="sm"
               >
                 90 Days
               </Button>
               <Button 
-                variant={timeRange === '1y' ? 'default' : 'outline'} 
+                variant={timeRange === '1y' ? 'primary' : 'outline'} 
                 onClick={() => setTimeRange('1y')}
                 size="sm"
               >
                 1 Year
               </Button>
               <Button 
-                variant={timeRange === 'all' ? 'default' : 'outline'} 
+                variant={timeRange === 'all' ? 'primary' : 'outline'} 
                 onClick={() => setTimeRange('all')}
                 size="sm"
               >

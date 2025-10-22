@@ -274,7 +274,7 @@ export async function GET() {
       }
 
       applicationStatuses.forEach(status => {
-        const key = status.status.toLowerCase()
+        const key = status.status.toLowerCase() as keyof typeof statusCounts;
         if (key in statusCounts) {
           statusCounts[key] = status._count
         }

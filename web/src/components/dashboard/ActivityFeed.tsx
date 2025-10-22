@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 
 interface ActivityItem {
   id: string;
-  type: 'application' | 'job' | 'worker' | 'message' | 'review';
+  type: 'application' | 'job' | 'worker' | 'message' | 'review' | 'shift' | 'profile';
   message: string;
   time: string;
   details?: string;
@@ -104,7 +104,7 @@ export default function ActivityFeed({
             <div className="flex space-x-1">
               <Button
                 size="sm"
-                variant={filter === null ? 'default' : 'outline'}
+                variant={filter === null ? 'primary' : 'outline'}
                 onClick={() => handleFilterChange(null)}
                 className="text-xs px-2 py-1 h-auto"
               >
@@ -112,7 +112,7 @@ export default function ActivityFeed({
               </Button>
               <Button
                 size="sm"
-                variant={filter === 'application' ? 'default' : 'outline'}
+                variant={filter === 'application' ? 'primary' : 'outline'}
                 onClick={() => handleFilterChange('application')}
                 className="text-xs px-2 py-1 h-auto"
               >
@@ -120,7 +120,7 @@ export default function ActivityFeed({
               </Button>
               <Button
                 size="sm"
-                variant={filter === 'job' ? 'default' : 'outline'}
+                variant={filter === 'job' ? 'primary' : 'outline'}
                 onClick={() => handleFilterChange('job')}
                 className="text-xs px-2 py-1 h-auto"
               >

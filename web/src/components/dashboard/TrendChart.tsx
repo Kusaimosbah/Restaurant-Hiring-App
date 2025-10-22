@@ -94,21 +94,25 @@ export default function TrendChart({
               className="overflow-visible"
             >
               {/* Area fill */}
-              <path
-                d={paths.area}
-                fill={colorMap[color].fill}
-                fillOpacity="0.2"
-              />
+              {paths && typeof paths === 'object' && (
+                <path
+                  d={paths.area}
+                  fill={colorMap[color].fill}
+                  fillOpacity="0.2"
+                />
+              )}
               
               {/* Line */}
-              <path
-                d={paths.line}
-                fill="none"
-                stroke={colorMap[color].stroke}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {paths && typeof paths === 'object' && (
+                <path
+                  d={paths.line}
+                  fill="none"
+                  stroke={colorMap[color].stroke}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
               
               {/* Data points */}
               {data.map((value, i) => {

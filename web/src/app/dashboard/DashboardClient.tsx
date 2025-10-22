@@ -92,6 +92,15 @@ interface Task {
   dueDate?: string;
 }
 
+interface Application {
+  id: string;
+  position: string;
+  restaurant?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'interviewing' | 'withdrawn';
+  appliedDate: string;
+  updatedDate?: string;
+}
+
 export default function DashboardClient() {
   const { data: sessionData, status } = useSession();
   const router = useRouter();
@@ -310,20 +319,20 @@ export default function DashboardClient() {
   };
 
   // Sample data for worker's applications
-  const getWorkerApplications = () => {
+  const getWorkerApplications = (): Application[] => {
     return [
       {
         id: 'app-1',
         position: 'Server Position',
         restaurant: 'The Golden Fork',
-        status: 'pending',
+        status: 'pending' as const,
         appliedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 'app-2',
         position: 'Cook Position',
         restaurant: 'Pasta Paradise',
-        status: 'approved',
+        status: 'approved' as const,
         appliedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
         updatedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       },
@@ -331,7 +340,7 @@ export default function DashboardClient() {
         id: 'app-3',
         position: 'Bartender Position',
         restaurant: 'Cocktail Corner',
-        status: 'interviewing',
+        status: 'interviewing' as const,
         appliedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         updatedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
       }

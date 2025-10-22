@@ -9,9 +9,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: moduleId } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
@@ -21,10 +22,8 @@ export async function GET(
       );
     }
     
-    const moduleId = params.id;
-    
     // Get the module with materials
-    const module = await prisma.trainingModule.findUnique({
+    const trainingModule = await prisma.trainingModule.findUnique({
       where: { id: moduleId },
       include: {
         materials: {
@@ -45,7 +44,7 @@ export async function GET(
       }
     });
     
-    if (!module) {
+    if (!trainingModule) {
       return NextResponse.json(
         { error: 'Training module not found' },
         { status: 404 }
@@ -61,18 +60,16 @@ export async function GET(
     });
     
     // Calculate module completion percentage
-    const totalMaterials = module.materials.length;
+    const totalMaterials = trainingModule.materials.length;
     const completedMaterials = progress.filter(p => p.status === 'COMPLETED').length;
     const completionPercentage = totalMaterials > 0 
       ? Math.round((completedMaterials / totalMaterials) * 100) 
       : 0;
-    
+
     // Check if prerequisites are completed
     let prerequisitesCompleted = true;
-    if (module.prerequisites.length > 0) {
-      const prerequisiteIds = module.prerequisites.map(p => p.id);
-      
-      // For each prerequisite, check if all its materials are completed
+    if (trainingModule.prerequisites.length > 0) {
+      const prerequisiteIds = trainingModule.prerequisites.map(p => p.id);      // For each prerequisite, check if all its materials are completed
       for (const prereqId of prerequisiteIds) {
         const prereqModule = await prisma.trainingModule.findUnique({
           where: { id: prereqId },
@@ -102,16 +99,16 @@ export async function GET(
     }
     
     // Map progress to materials
-    const materialsWithProgress = module.materials.map(material => {
+    const materialsWithProgress = trainingModule.materials.map(material => {
       const materialProgress = progress.find(p => p.materialId === material.id) || null;
       return {
         ...material,
         progress: materialProgress
       };
     });
-    
+
     return NextResponse.json({
-      ...module,
+      ...trainingModule,
       materials: materialsWithProgress,
       progress: {
         completionPercentage,

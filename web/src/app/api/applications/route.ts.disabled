@@ -80,8 +80,7 @@ export async function POST(request: NextRequest) {
       data: {
         jobId,
         workerId: workerProfile.id,
-        restaurantId: job.restaurantId,
-        message
+        restaurantId: job.restaurantId
       },
       include: {
         job: {

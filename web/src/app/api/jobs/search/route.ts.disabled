@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
@@ -66,8 +67,8 @@ export async function GET(request: NextRequest) {
     // Filter by query (search in title and description)
     if (query) {
       where.OR = [
-        { title: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
+        { title: { contains: query, mode: Prisma.QueryMode.insensitive } },
+        { description: { contains: query, mode: Prisma.QueryMode.insensitive } },
       ];
     }
 
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
       where.OR = [
         ...(where.OR || []),
         ...jobTypes.map((type: string) => ({
-          title: { contains: type, mode: 'insensitive' },
+          title: { contains: type, mode: Prisma.QueryMode.insensitive },
         })),
       ];
     }
@@ -103,10 +104,10 @@ export async function GET(request: NextRequest) {
     if (location) {
       where.restaurant = {
         OR: [
-          { address: { contains: location, mode: 'insensitive' } },
-          { locations: { some: { city: { contains: location, mode: 'insensitive' } } } },
-          { locations: { some: { state: { contains: location, mode: 'insensitive' } } } },
-          { locations: { some: { zipCode: { contains: location, mode: 'insensitive' } } } },
+          { address: { contains: location, mode: Prisma.QueryMode.insensitive } },
+          { locations: { some: { city: { contains: location, mode: Prisma.QueryMode.insensitive } } } },
+          { locations: { some: { state: { contains: location, mode: Prisma.QueryMode.insensitive } } } },
+          { locations: { some: { zipCode: { contains: location, mode: Prisma.QueryMode.insensitive } } } },
         ],
       };
     }

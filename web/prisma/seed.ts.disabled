@@ -12,8 +12,6 @@ async function main() {
   await prisma.reviewRestaurant.deleteMany()
   await prisma.application.deleteMany()
   await prisma.job.deleteMany()
-  await prisma.availabilitySlot.deleteMany()
-  await prisma.onboardingDocument.deleteMany()
   await prisma.paymentInfo.deleteMany()
   await prisma.restaurantPhoto.deleteMany()
   await prisma.location.deleteMany()

@@ -19,7 +19,13 @@ interface Location {
 interface Restaurant {
   id: string;
   name: string;
-  address: string;
+  address?: string | {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+  formattedAddress?: string;
   locations?: Location[];
 }
 
@@ -45,6 +51,21 @@ interface JobMapProps {
   userLocation?: { lat: number; lng: number };
   loading?: boolean;
 }
+
+// Helper function to format address
+const formatAddress = (address?: string | { street: string; city: string; state: string; zipCode: string; }, formattedAddress?: string): string => {
+  if (formattedAddress) return formattedAddress;
+  if (typeof address === 'string') return address;
+  if (address && typeof address === 'object') {
+    return `${address.street}, ${address.city}, ${address.state} ${address.zipCode}`;
+  }
+  return 'Address not available';
+};
+
+const getShortAddress = (address?: string | { street: string; city: string; state: string; zipCode: string; }, formattedAddress?: string): string => {
+  const fullAddress = formatAddress(address, formattedAddress);
+  return fullAddress.split(',')[0] || fullAddress;
+};
 
 // Mock function to get coordinates for jobs that don't have lat/lng
 // In a real app, this would use a geocoding service
@@ -259,15 +280,15 @@ export default function JobMap({ jobs, onSelectJob, userLocation: initialUserLoc
         
         {/* Map Controls */}
         <div className="absolute top-4 right-4 flex flex-col space-y-2">
-          <Button size="sm" variant="default" className="bg-white text-gray-800 shadow-md">
+          <Button size="sm" variant="primary" className="bg-white text-gray-800 shadow-md">
             <span className="text-xl font-bold">+</span>
           </Button>
-          <Button size="sm" variant="default" className="bg-white text-gray-800 shadow-md">
+          <Button size="sm" variant="primary" className="bg-white text-gray-800 shadow-md">
             <span className="text-xl font-bold">−</span>
           </Button>
           <Button 
             size="sm" 
-            variant="default" 
+            variant="primary" 
             className={`${isLocating ? 'animate-pulse' : ''} bg-white text-gray-800 shadow-md`}
             onClick={getUserLocation}
             disabled={isLocating}
@@ -287,7 +308,7 @@ export default function JobMap({ jobs, onSelectJob, userLocation: initialUserLoc
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{selectedJob.title}</h3>
-                <p className="text-sm text-gray-600">{selectedJob.restaurant.name} • {selectedJob.restaurant.address}</p>
+                <p className="text-sm text-gray-600">{selectedJob.restaurant.name} • {formatAddress(selectedJob.restaurant.address, selectedJob.restaurant.formattedAddress)}</p>
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-green-600">${selectedJob.hourlyRate}/hour</p>
@@ -297,7 +318,7 @@ export default function JobMap({ jobs, onSelectJob, userLocation: initialUserLoc
             <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
               <div className="flex items-center">
                 <MapPinIcon className="h-4 w-4 mr-1" />
-                <span>{selectedJob.restaurant.address.split(',')[0]}</span>
+                <span>{getShortAddress(selectedJob.restaurant.address, selectedJob.restaurant.formattedAddress)}</span>
               </div>
             </div>
             

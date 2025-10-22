@@ -250,10 +250,7 @@ export default function MaterialViewer({ materialId }: { materialId: string }) {
             <p className="text-sm text-gray-500 mb-2">Document URL: {material.content}</p>
             <div className="flex justify-center mt-4">
               <Button 
-                as="a" 
-                href={material.content} 
-                target="_blank" 
-                rel="noopener noreferrer"
+                onClick={() => window.open(material.content, '_blank', 'noopener,noreferrer')}
               >
                 Open Document
               </Button>
@@ -380,10 +377,7 @@ export default function MaterialViewer({ materialId }: { materialId: string }) {
             </p>
             <div className="flex justify-center">
               <Button 
-                as="a" 
-                href={material.content} 
-                target="_blank" 
-                rel="noopener noreferrer"
+                onClick={() => window.open(material.content, '_blank', 'noopener,noreferrer')}
               >
                 Launch Exercise
               </Button>

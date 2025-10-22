@@ -332,7 +332,7 @@ export default function JobSearch({ initialJobs = [], onApply, onSave }: JobSear
           
           <div className="flex justify-between items-center mt-4">
             <Button 
-              variant="text" 
+              variant="outline" 
               size="sm" 
               onClick={() => toggleExpandJob(job.id)}
               className="text-indigo-600 hover:text-indigo-800"
@@ -492,7 +492,7 @@ export default function JobSearch({ initialJobs = [], onApply, onSave }: JobSear
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Advanced Filters</h3>
               <Button
-                variant="text"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(false)}
                 className="text-gray-500"
@@ -656,7 +656,7 @@ export default function JobSearch({ initialJobs = [], onApply, onSave }: JobSear
         
         <div className="flex space-x-2">
           <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
+            variant={viewMode === 'list' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setViewMode('list')}
             className="flex items-center"
@@ -666,7 +666,7 @@ export default function JobSearch({ initialJobs = [], onApply, onSave }: JobSear
           </Button>
           
           <Button
-            variant={viewMode === 'map' ? 'default' : 'outline'}
+            variant={viewMode === 'map' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setViewMode('map')}
             className="flex items-center"

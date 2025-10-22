@@ -1,8 +1,19 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { RestaurantPhoto } from '@prisma/client';
 import { Button } from '@/components/ui/Button';
+
+// Temporary RestaurantPhoto type since it's not available from current Prisma schema
+interface RestaurantPhoto {
+  id: string;
+  url: string;
+  type?: string;
+  caption?: string;
+  sortOrder?: number;
+  createdAt: Date;
+  updatedAt: Date;
+  restaurantId: string;
+}
 
 // Photo types for dropdown
 const photoTypes = [
@@ -102,11 +113,12 @@ export default function PhotoGallery({
       const uploadResult = await uploadResponse.json();
       
       // Now create the photo record with the URL
-      await onAddPhoto({
-        url: uploadResult.url,
-        type: uploadResult.type,
-        caption: uploadResult.caption
-      });
+      const photoFormData = new FormData();
+      photoFormData.append('url', uploadResult.url);
+      photoFormData.append('type', uploadResult.type || editData.type);
+      photoFormData.append('caption', uploadResult.caption || editData.caption || '');
+      
+      await onAddPhoto(photoFormData);
       
       // Complete progress
       clearInterval(progressInterval);
@@ -288,7 +300,7 @@ export default function PhotoGallery({
                       </Button>
                       <Button
                         size="sm"
-                        variant="destructive"
+                        variant="danger"
                         onClick={() => handleDeleteClick(photo.id)}
                         className="bg-red-600 text-white hover:bg-red-700"
                       >

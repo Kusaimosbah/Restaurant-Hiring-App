@@ -71,7 +71,7 @@ export function withRateLimit(
     return async (request: NextRequest) => {
       const clientId = identifier 
         ? identifier(request)
-        : request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+        : request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
       
       const rateLimitResult = await TokenManager.checkRateLimit(
         `api:${clientId}`, 
@@ -164,7 +164,8 @@ export function withLogging(handler: (req: NextRequest) => Promise<NextResponse>
     const startTime = Date.now()
     
     // Log request
-    console.log(`📥 ${request.method} ${request.url} - ${request.ip || 'unknown IP'}`)
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown IP'
+    console.log(`📥 ${request.method} ${request.url} - ${clientIp}`)
     
     try {
       const response = await handler(request)

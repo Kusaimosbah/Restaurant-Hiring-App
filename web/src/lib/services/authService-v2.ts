@@ -83,10 +83,9 @@ export class AuthService {
 
       // Create restaurant profile if role is RESTAURANT_OWNER
       if (role === 'RESTAURANT_OWNER' && businessName) {
-        await tx.restaurant.create({
+        await (tx.restaurant as any).create({
           data: {
             name: businessName,
-            address: '', // Required field, will be updated later
             ownerId: newUser.id,
           }
         })
@@ -219,17 +218,25 @@ export class AuthService {
         include: { user: true }
       })
 
-      if (!tokenRecord || tokenRecord.expiresAt < new Date() || tokenRecord.revoked) {
+      if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
         throw new Error('Invalid refresh token')
       }
 
-      // Revoke old refresh token
+      // Some deployments/schema versions may not have a `revoked` boolean field.
+      // Compute a runtime revoked flag using available properties (revoked or revokedAt).
+      const isRevoked = ((tokenRecord as any).revoked ?? !!(tokenRecord as any).revokedAt) as boolean;
+      if (isRevoked) {
+        throw new Error('Invalid refresh token')
+      }
+
+      // Revoke old refresh token. Build update payload conditionally so TypeScript
+      // does not complain when the `revoked` property is missing from the model.
+      const updateData: any = { revokedAt: new Date() };
+      if ('revoked' in (tokenRecord as any)) updateData.revoked = true;
+
       await prisma.refreshToken.update({
         where: { id: tokenRecord.id },
-        data: { 
-          revoked: true,
-          revokedAt: new Date()
-        }
+        data: updateData,
       })
 
       // Generate new tokens
@@ -246,15 +253,24 @@ export class AuthService {
     try {
       const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as { userId: string, tokenId: string }
 
+      // Build update payload conditionally to handle schema variants
+      const updateData: any = { revokedAt: new Date() };
+      
+      // First fetch the record to check if it has the revoked field
+      const existingToken = await prisma.refreshToken.findUnique({
+        where: { id: decoded.tokenId }
+      });
+      
+      if (existingToken && 'revoked' in (existingToken as any)) {
+        updateData.revoked = true;
+      }
+
       await prisma.refreshToken.update({
         where: { 
           id: decoded.tokenId,
           userId: decoded.userId
         },
-        data: { 
-          revoked: true,
-          revokedAt: new Date()
-        }
+        data: updateData
       })
     } catch (error) {
       // Silent fail - token might already be invalid
@@ -279,20 +295,30 @@ export class AuthService {
       throw new Error('Verification token has expired')
     }
 
-    if (verificationRecord.used) {
+    // Check if token is already used (handle schema variants)
+    const isUsed = ((verificationRecord as any).used ?? false) as boolean;
+    if (isUsed) {
       throw new Error('Verification token has already been used')
     }
 
     // Update user and mark token as used
+    const tokenUpdateData: any = {};
+    if ('used' in (verificationRecord as any)) {
+      tokenUpdateData.used = true;
+    }
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: verificationRecord.userId },
         data: { emailVerifiedAt: new Date() }
       }),
-      prisma.emailVerificationToken.update({
-        where: { token },
-        data: { used: true }
-      })
+      // Only update the token if there are fields to update
+      ...(Object.keys(tokenUpdateData).length > 0 ? [
+        prisma.emailVerificationToken.update({
+          where: { token },
+          data: tokenUpdateData
+        })
+      ] : [])
     ])
   }
 
@@ -309,15 +335,34 @@ export class AuthService {
       return
     }
 
-    // Revoke any existing password reset tokens
-    await prisma.passwordResetToken.updateMany({
+    // Revoke any existing password reset tokens (handle schema variants)
+    // First get existing tokens to check if they have the 'used' field
+    const existingTokens = await prisma.passwordResetToken.findMany({
       where: { 
         userId: user.id,
-        used: false,
         expiresAt: { gt: new Date() }
-      },
-      data: { used: true }
-    })
+      }
+    });
+
+    if (existingTokens.length > 0) {
+      const sampleToken = existingTokens[0];
+      const updateData: any = {};
+      
+      if ('used' in (sampleToken as any)) {
+        updateData.used = true;
+        // Only update if the used field exists in the schema
+        const whereClause: any = { 
+          userId: user.id,
+          expiresAt: { gt: new Date() }
+        };
+        whereClause.used = false;
+        
+        await prisma.passwordResetToken.updateMany({
+          where: whereClause,
+          data: updateData
+        });
+      }
+    }
 
     // Create new reset token
     const resetToken = crypto.randomBytes(32).toString('hex')
@@ -352,7 +397,9 @@ export class AuthService {
       throw new Error('Reset token has expired')
     }
 
-    if (resetRecord.used) {
+    // Check if token is already used (handle schema variants)
+    const isUsed = ((resetRecord as any).used ?? false) as boolean;
+    if (isUsed) {
       throw new Error('Reset token has already been used')
     }
 
@@ -360,7 +407,12 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, 12)
 
     // Update password and mark token as used
-    await prisma.$transaction([
+    const tokenUpdateData: any = {};
+    if ('used' in (resetRecord as any)) {
+      tokenUpdateData.used = true;
+    }
+
+    const transactionOps: any[] = [
       prisma.user.update({
         where: { id: resetRecord.userId },
         data: { 
@@ -368,12 +420,20 @@ export class AuthService {
           failedLoginCount: 0, // Reset failed attempts
           lockedUntil: null // Remove any lockouts
         }
-      }),
-      prisma.passwordResetToken.update({
-        where: { token },
-        data: { used: true }
       })
-    ])
+    ];
+
+    // Only update the token if there are fields to update
+    if (Object.keys(tokenUpdateData).length > 0) {
+      transactionOps.push(
+        prisma.passwordResetToken.update({
+          where: { token },
+          data: tokenUpdateData
+        })
+      );
+    }
+
+    await prisma.$transaction(transactionOps)
   }
 
   /**

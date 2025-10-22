@@ -84,7 +84,7 @@ export function withRateLimit(maxRequests: number = 100, windowMs: number = 15 *
 
   return (handler: (req: NextRequest) => Promise<NextResponse>) => {
     return async (request: NextRequest) => {
-      const clientIp = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+      const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
       const now = Date.now()
       
       const clientData = requests.get(clientIp)

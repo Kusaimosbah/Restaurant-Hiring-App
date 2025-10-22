@@ -15,18 +15,19 @@ export async function GET() {
       where: {
         OR: [
           { senderId: session.user.id },
-          { receiverId: session.user.id }
+          { recipientId: session.user.id }
         ]
       },
       select: {
         id: true,
         content: true,
-        isRead: true,
         createdAt: true,
+        senderId: true,
+        recipientId: true,
         sender: {
           select: { id: true, name: true, role: true }
         },
-        receiver: {
+        recipient: {
           select: { id: true, name: true, role: true }
         },
         application: {
@@ -44,7 +45,7 @@ export async function GET() {
     
     conversations.forEach(message => {
       const otherUser = message.sender.id === session.user.id 
-        ? message.receiver 
+        ? message.recipient 
         : message.sender;
       
       const key = otherUser.id;

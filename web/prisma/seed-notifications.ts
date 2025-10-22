@@ -67,7 +67,6 @@ async function createRestaurantOwnerNotifications(userId: string) {
         title: 'New Message',
         message: 'You have a new message from John Smith',
         isRead: true,
-        readAt: new Date(),
         data: { conversationId: 'sample-conv-id', senderId: 'sample-user-id' }
       },
       {
@@ -102,7 +101,6 @@ async function createWorkerNotifications(userId: string) {
         title: 'New Job Posting',
         message: 'A new Server position is available that matches your profile',
         isRead: true,
-        readAt: new Date(),
         data: { jobId: 'sample-job-id', jobTitle: 'Server' }
       },
       {

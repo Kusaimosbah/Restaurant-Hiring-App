@@ -238,7 +238,7 @@ export default function ModuleDetail({ moduleId }: { moduleId: string }) {
                   {module.prerequisites.map((prereq) => (
                     <li key={prereq.id}>
                       <Button 
-                        variant="link" 
+                        variant="outline" 
                         className="p-0 h-auto text-yellow-700 underline"
                         onClick={() => router.push(`/training/modules/${prereq.id}`)}
                       >
@@ -283,7 +283,7 @@ export default function ModuleDetail({ moduleId }: { moduleId: string }) {
             
             <div className="flex justify-end">
               <Button
-                variant={material.progress?.status === 'COMPLETED' ? "outline" : "default"}
+                variant={material.progress?.status === 'COMPLETED' ? "outline" : "primary"}
                 size="sm"
                 disabled={isModuleLocked}
                 onClick={() => router.push(`/training/materials/${material.id}`)}

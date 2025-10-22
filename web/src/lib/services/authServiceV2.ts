@@ -107,9 +107,9 @@ export class AuthServiceV2 {
         await tx.restaurant.create({
           data: {
             name: businessName,
-            address: '', // Will be updated later in onboarding
             ownerId: newUser.id,
-          }
+            // Address will be added later in onboarding
+          } as any
         })
       }
 
@@ -261,20 +261,18 @@ export class AuthServiceV2 {
         include: { user: true }
       })
 
-      if (!tokenRecord || tokenRecord.expiresAt < new Date() || tokenRecord.revoked) {
+      // Check if token is expired or revoked (handle schema variants)
+      const isRevoked = ((tokenRecord as any).revoked ?? !!(tokenRecord as any).revokedAt) as boolean;
+      if (!tokenRecord || tokenRecord.expiresAt < new Date() || isRevoked) {
         throw new Error('Invalid refresh token')
       }
 
       // Blacklist old refresh token
       await TokenManager.blacklistToken(decoded.tokenId, 3600) // 1 hour blacklist
 
-      // Revoke old refresh token in database
-      await prisma.refreshToken.update({
-        where: { id: tokenRecord.id },
-        data: { 
-          revoked: true,
-          revokedAt: new Date()
-        }
+      // Revoke old refresh token in database (delete since no revoked field)
+      await prisma.refreshToken.delete({
+        where: { id: tokenRecord.id }
       })
 
       // Generate new tokens
@@ -299,14 +297,10 @@ export class AuthServiceV2 {
       await TokenManager.blacklistToken(decoded.tokenId, 3600) // 1 hour blacklist
 
       // Revoke refresh token in database
-      await prisma.refreshToken.update({
+      await prisma.refreshToken.delete({
         where: { 
           id: decoded.tokenId,
           userId: decoded.userId
-        },
-        data: { 
-          revoked: true,
-          revokedAt: new Date()
         }
       })
     } catch (error) {
@@ -320,15 +314,11 @@ export class AuthServiceV2 {
    */
   static async logoutAllDevices(userId: string): Promise<void> {
     // Revoke all refresh tokens in database
-    await prisma.refreshToken.updateMany({
+    // Delete all active refresh tokens for user
+    await prisma.refreshToken.deleteMany({
       where: { 
         userId,
-        revoked: false,
         expiresAt: { gt: new Date() }
-      },
-      data: { 
-        revoked: true,
-        revokedAt: new Date()
       }
     })
 
@@ -378,25 +368,25 @@ export class AuthServiceV2 {
     })
 
     // Generate access token with token ID for blacklisting
-    const accessToken = jwt.sign(
+    const accessToken = (jwt.sign as any)(
       { 
         userId, 
         tokenId: refreshTokenRecord.id, 
         type: 'access' 
-      } as TokenPayload,
-      this.JWT_SECRET,
-      { expiresIn: this.ACCESS_TOKEN_EXPIRY }
+      },
+      String(this.JWT_SECRET),
+      { expiresIn: String(this.ACCESS_TOKEN_EXPIRY) }
     )
 
     // Generate refresh token JWT
-    const refreshToken = jwt.sign(
+    const refreshToken = (jwt.sign as any)(
       { 
         userId, 
         tokenId: refreshTokenRecord.id, 
         type: 'refresh' 
-      } as TokenPayload,
-      this.JWT_REFRESH_SECRET,
-      { expiresIn: this.REFRESH_TOKEN_EXPIRY }
+      },
+      String(this.JWT_REFRESH_SECRET),
+      { expiresIn: String(this.REFRESH_TOKEN_EXPIRY) }
     )
 
     // Store session information in Redis

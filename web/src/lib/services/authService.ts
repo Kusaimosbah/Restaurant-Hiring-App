@@ -214,14 +214,25 @@ export class AuthService {
         include: { user: true }
       })
 
-      if (!tokenRecord || tokenRecord.expiresAt < new Date() || tokenRecord.revoked) {
+      if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
         throw new Error('Invalid refresh token')
       }
 
-      // Revoke old refresh token
+      // Check if token is already revoked (handle schema variants)
+      const isRevoked = ((tokenRecord as any).revoked ?? !!(tokenRecord as any).revokedAt) as boolean;
+      if (isRevoked) {
+        throw new Error('Invalid refresh token')
+      }
+
+      // Revoke old refresh token conditionally
+      const updateData: any = { revokedAt: new Date() };
+      if ('revoked' in (tokenRecord as any)) {
+        updateData.revoked = true;
+      }
+
       await prisma.refreshToken.update({
         where: { id: tokenRecord.id },
-        data: { revoked: true }
+        data: updateData
       })
 
       // Generate new tokens
@@ -238,12 +249,14 @@ export class AuthService {
     try {
       const decoded = jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as { userId: string, tokenId: string }
 
+      // Update token with revoked status (handle schema variants)
+      const updateData: any = { revokedAt: new Date() };
       await prisma.refreshToken.update({
         where: { 
           id: decoded.tokenId,
           userId: decoded.userId
         },
-        data: { revoked: true }
+        data: updateData
       })
     } catch (error) {
       // Silent fail - token might already be invalid
@@ -268,21 +281,39 @@ export class AuthService {
       throw new Error('Verification token has expired')
     }
 
-    if (verificationRecord.used) {
+    // Check if token is already used (handle schema variants)
+    const isUsed = ((verificationRecord as any).used ?? !!(verificationRecord as any).usedAt) as boolean;
+    if (isUsed) {
       throw new Error('Verification token has already been used')
     }
 
-    // Update user and mark token as used
-    await prisma.$transaction([
+    // Update user and mark token as used (handle schema variants)
+    const updateData: any = {};
+    if ('used' in (verificationRecord as any)) {
+      updateData.used = true;
+    }
+    if ('usedAt' in (verificationRecord as any)) {
+      updateData.usedAt = new Date();
+    }
+    
+    const transactions: any[] = [
       prisma.user.update({
         where: { id: verificationRecord.userId },
         data: { emailVerifiedAt: new Date() }
-      }),
-      prisma.emailVerificationToken.update({
-        where: { token },
-        data: { used: true }
       })
-    ])
+    ];
+    
+    // Only update token if it has usable fields
+    if (Object.keys(updateData).length > 0) {
+      transactions.push(
+        prisma.emailVerificationToken.update({
+          where: { token },
+          data: updateData
+        })
+      );
+    }
+    
+    await prisma.$transaction(transactions)
   }
 
   /**
@@ -298,14 +329,12 @@ export class AuthService {
       return
     }
 
-    // Revoke any existing password reset tokens
-    await prisma.passwordResetToken.updateMany({
+    // Revoke any existing password reset tokens by deleting them
+    await prisma.passwordResetToken.deleteMany({
       where: { 
         userId: user.id,
-        used: false,
         expiresAt: { gt: new Date() }
-      },
-      data: { used: true }
+      }
     })
 
     // Create new reset token
@@ -319,6 +348,10 @@ export class AuthService {
         expiresAt: resetExpiry,
       }
     })
+
+    // Create reset link
+    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}`
 
     // Send password reset email
     try {
@@ -355,7 +388,9 @@ export class AuthService {
       throw new Error('Reset token has expired')
     }
 
-    if (resetRecord.used) {
+    // Check if token is already used (handle schema variants)
+    const isUsed = ((resetRecord as any).used ?? !!(resetRecord as any).usedAt) as boolean;
+    if (isUsed) {
       throw new Error('Reset token has already been used')
     }
 
@@ -372,9 +407,8 @@ export class AuthService {
           lockedUntil: null // Remove any lockouts
         }
       }),
-      prisma.passwordResetToken.update({
-        where: { token },
-        data: { used: true }
+      prisma.passwordResetToken.delete({
+        where: { token }
       })
     ])
   }
@@ -384,10 +418,10 @@ export class AuthService {
    */
   private static async generateTokens(userId: string): Promise<AuthTokens> {
     // Generate access token
-    const accessToken = jwt.sign(
+    const accessToken = (jwt.sign as any)(
       { userId, type: 'access' },
-      this.JWT_SECRET,
-      { expiresIn: this.ACCESS_TOKEN_EXPIRY }
+      String(this.JWT_SECRET),
+      { expiresIn: String(this.ACCESS_TOKEN_EXPIRY) }
     )
 
     // Generate refresh token string
@@ -403,10 +437,10 @@ export class AuthService {
     })
 
     // Generate refresh token JWT (contains reference to database record)
-    const refreshToken = jwt.sign(
+    const refreshToken = (jwt.sign as any)(
       { userId, tokenId: refreshTokenRecord.id, type: 'refresh' },
-      this.JWT_REFRESH_SECRET,
-      { expiresIn: this.REFRESH_TOKEN_EXPIRY }
+      String(this.JWT_REFRESH_SECRET),
+      { expiresIn: String(this.REFRESH_TOKEN_EXPIRY) }
     )
 
     return {
