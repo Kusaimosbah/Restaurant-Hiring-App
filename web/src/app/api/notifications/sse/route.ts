@@ -1,41 +1,52 @@
-import { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-// Mock SSE endpoint for notifications - temporary fix for Ahmed's UI testing
-export async function GET(request: NextRequest) {
-  // Create a ReadableStream for SSE
-  const stream = new ReadableStream({
-    start(controller) {
-      // Send initial connection message
-      const data = JSON.stringify({ type: 'connected', message: 'Connected to notifications' })
-      controller.enqueue(`data: ${data}\n\n`)
-      
-      // Send a heartbeat every 30 seconds to keep connection alive
-      const interval = setInterval(() => {
-        try {
-          const heartbeat = JSON.stringify({ type: 'heartbeat', timestamp: Date.now() })
-          controller.enqueue(`data: ${heartbeat}\n\n`)
-        } catch (error) {
-          clearInterval(interval)
-          controller.close()
-        }
-      }, 30000)
-      
-      // Clean up on client disconnect
-      request.signal?.addEventListener('abort', () => {
-        clearInterval(interval)
-        controller.close()
-      })
+// This endpoint uses Server-Sent Events (SSE) for real-time notifications
+export async function GET(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
-  })
 
-  return new Response(stream, {
-    headers: {
+    const userId = session.user.id;
+
+    // Set up SSE headers
+    const headers = new Headers({
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Cache-Control'
-    }
-  })
+      'Connection': 'keep-alive'
+    });
+
+    const stream = new ReadableStream({
+      start(controller) {
+        // Send initial connection message
+        const encoder = new TextEncoder();
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'connection_established', message: 'Connected to notification stream' })}\n\n`));
+        
+        // Set up interval to send keep-alive messages
+        const keepAliveInterval = setInterval(() => {
+          controller.enqueue(encoder.encode(`: keep-alive\n\n`));
+        }, 30000); // Every 30 seconds
+        
+        // Clean up on close
+        request.signal.addEventListener('abort', () => {
+          clearInterval(keepAliveInterval);
+        });
+      }
+    });
+
+    return new Response(stream, { headers });
+  } catch (error) {
+    console.error('Error setting up SSE connection:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

@@ -470,18 +470,13 @@ export class AuthServiceV2 {
       throw new Error('Verification token has expired')
     }
 
-    if (verificationRecord.used) {
-      throw new Error('Verification token has already been used')
-    }
-
     await prisma.$transaction([
       prisma.user.update({
         where: { id: verificationRecord.userId },
         data: { emailVerifiedAt: new Date() }
       }),
-      prisma.emailVerificationToken.update({
-        where: { token },
-        data: { used: true }
+      prisma.emailVerificationToken.delete({
+        where: { token }
       })
     ])
   }
@@ -493,13 +488,12 @@ export class AuthServiceV2 {
 
     if (!user) return // Don't reveal if email exists
 
-    await prisma.passwordResetToken.updateMany({
+    // Delete any existing valid reset tokens for this user
+    await prisma.passwordResetToken.deleteMany({
       where: { 
         userId: user.id,
-        used: false,
         expiresAt: { gt: new Date() }
-      },
-      data: { used: true }
+      }
     })
 
     const resetToken = crypto.randomBytes(32).toString('hex')
@@ -522,7 +516,7 @@ export class AuthServiceV2 {
       include: { user: true }
     })
 
-    if (!resetRecord || resetRecord.expiresAt < new Date() || resetRecord.used) {
+    if (!resetRecord || resetRecord.expiresAt < new Date()) {
       throw new Error('Invalid or expired reset token')
     }
 
@@ -539,9 +533,8 @@ export class AuthServiceV2 {
           lockedUntil: null
         }
       }),
-      prisma.passwordResetToken.update({
-        where: { token },
-        data: { used: true }
+      prisma.passwordResetToken.delete({
+        where: { token }
       })
     ])
 

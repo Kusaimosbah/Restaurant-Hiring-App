@@ -29,6 +29,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
+      return NextResponse.json(
+        { error: 'Password must contain both letters and numbers' },
+        { status: 400 }
+      )
+    }
 
     // Validate role
     if (!['WORKER', 'RESTAURANT_OWNER'].includes(role)) {

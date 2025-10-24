@@ -126,6 +126,14 @@ export default function DashboardClient() {
       router.push('/auth/signin');
       return;
     }
+    
+    // Force session validation to ensure we have fresh role data
+    if (sessionData?.user?.role && !['RESTAURANT_OWNER', 'WORKER'].includes(sessionData.user.role)) {
+      console.warn('Invalid user role detected, redirecting to signin');
+      router.push('/auth/signin');
+      return;
+    }
+    
     loadDashboardData();
   }, [sessionData, status, router]);
 

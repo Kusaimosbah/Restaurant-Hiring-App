@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardHeader from '@/components/DashboardHeader';
@@ -39,7 +39,7 @@ interface ApiReview {
   };
 }
 
-export default function ReviewsPage() {
+function ReviewsPageContent() {
   const { data: sessionData, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -367,5 +367,13 @@ export default function ReviewsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReviewsPage() {
+  return (
+    <Suspense fallback={<div>Loading reviews...</div>}>
+      <ReviewsPageContent />
+    </Suspense>
   );
 }

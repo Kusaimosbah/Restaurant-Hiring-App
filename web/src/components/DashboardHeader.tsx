@@ -1,6 +1,7 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
 import NotificationIcon from './notifications/NotificationIcon';
 import MobileNav from './dashboard/MobileNav';
@@ -16,7 +17,32 @@ interface DashboardHeaderProps {
 
 export default function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const isAdmin = session?.user?.role === 'RESTAURANT_OWNER';
+
+  const handleLogout = async () => {
+    try {
+      // Call our custom logout API first to clear refresh token
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout API error:', error);
+    }
+    
+    // Clear any local storage that might have session data
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+    
+    // Then call NextAuth signOut which clears session and redirects
+    await signOut({
+      callbackUrl: '/',
+      redirect: true
+    });
+  };
 
   return (
     <div className="bg-white shadow-sm border-b border-gray-200">
@@ -55,7 +81,7 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
             <Button
               variant="outline"
               size="sm"
-              onClick={() => signOut()}
+              onClick={handleLogout}
               className="flex items-center space-x-0 sm:space-x-2 px-2 sm:px-3"
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4" />

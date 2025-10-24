@@ -186,7 +186,7 @@ async function testRestaurantLocations() {
     console.log('Successfully fetched locations:');
     console.log(JSON.stringify(getResponse.data, null, 2));
     
-    if (getResponse.data.length > 0) {
+    if (Array.isArray(getResponse.data) && getResponse.data.length > 0) {
       locationId = getResponse.data[0].id;
     }
   } else {
@@ -201,7 +201,7 @@ async function testRestaurantLocations() {
   if (createResponse.status === 201) {
     console.log('Successfully created new location:');
     console.log(JSON.stringify(createResponse.data, null, 2));
-    locationId = createResponse.data.id;
+    locationId = (createResponse.data as any)?.id;
   } else {
     console.error('Failed to create new location:', createResponse.data);
     return false;

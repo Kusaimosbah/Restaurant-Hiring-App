@@ -7,9 +7,8 @@ const getRedisClient = (): Redis => {
   if (!redis) {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
     redis = new Redis(redisUrl, {
-      retryDelayOnFailover: 100,
-      enableReadyCheck: false,
       maxRetriesPerRequest: 1,
+      lazyConnect: true
     })
 
     redis.on('error', (error) => {
