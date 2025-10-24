@@ -13,6 +13,7 @@ import {
   UserIcon,
   CalendarIcon,
   ClipboardDocumentCheckIcon,
+  BanknotesIcon,
   BellIcon,
   StarIcon,
   AcademicCapIcon
@@ -99,6 +100,12 @@ export default function Sidebar() {
       href: '/dashboard/stats',
       icon: ChartBarIcon,
       roles: ['RESTAURANT_OWNER', 'WORKER']
+    },
+    {
+      name: 'Payroll',
+      href: '/dashboard/payroll',
+      icon: BanknotesIcon,
+      roles: ['RESTAURANT_OWNER']
     },
     {
       name: 'Notifications',

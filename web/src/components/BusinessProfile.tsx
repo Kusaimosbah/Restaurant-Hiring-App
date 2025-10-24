@@ -550,41 +550,41 @@ export default function BusinessProfile() {
                       try {
                         setIsSaving(true);
   
-                        // In a real app, this would redirect to Stripe Connect OAuth flow
-                        // For demo purposes, we'll simulate connecting to Stripe
-                        setTimeout(() => {
-                          // Create a mock payment info object that matches the PaymentInfo type
-                          const mockPaymentInfo: PaymentInfo = {
-                            id: 'payment_' + Math.random().toString(36).substring(2, 15),
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                            restaurantId: profileData.restaurant?.id || '',
-                            stripeCustomerId: 'cus_' + Math.random().toString(36).substring(2, 15),
-                            stripeAccountId: 'acct_' + Math.random().toString(36).substring(2, 15),
-                            bankAccountLast4: profileData.restaurant?.paymentInfo?.bankAccountLast4 || null,
-                            cardLast4: profileData.restaurant?.paymentInfo?.cardLast4 || null,
-                            isVerified: true
-                          };
-  
+                        const response = await fetch('/api/stripe/connect', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                        });
+
+                        if (!response.ok) {
+                          throw new Error('Failed to connect to Stripe');
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                          // Update the local state with the new payment info
                           setProfileData(prev => {
                             if (!prev.restaurant) return prev;
-  
+
                             return {
                               ...prev,
                               restaurant: {
                                 ...prev.restaurant,
-                                paymentInfo: mockPaymentInfo
+                                paymentInfo: data.paymentInfo
                               }
                             };
                           });
-  
-                          alert('Successfully connected to Stripe!');
-                          setIsSaving(false);
-                        }, 2000);
-  
+
+                          alert(data.message || 'Successfully connected to Stripe!');
+                        } else {
+                          throw new Error(data.error || 'Connection failed');
+                        }
                       } catch (error) {
                         console.error('Error connecting to Stripe:', error);
                         alert('Failed to connect to Stripe. Please try again.');
+                      } finally {
                         setIsSaving(false);
                       }
                     }}
