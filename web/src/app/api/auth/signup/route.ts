@@ -1,88 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { AuthService } from '@/lib/services/authService'
+import { UserService } from '@/lib/services/UserService'
+import { withErrorHandling, validateRequiredFields, handleServiceResult } from '@/lib/middleware/apiResponse'
+import { Role } from '@prisma/client'
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, password, name, role, phone, businessName } = await request.json()
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const { email, password, name, role, phone, businessName } = await request.json()
 
-    // Validate required fields
-    if (!email || !password || !name || !role) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
-        { status: 400 }
-      )
-    }
-    
-    if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
-      return NextResponse.json(
-        { error: 'Password must contain both letters and numbers' },
-        { status: 400 }
-      )
-    }
-
-    // Validate role
-    if (!['WORKER', 'RESTAURANT_OWNER'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      )
-    }
-
-    // For restaurant owners, business name is required
-    if (role === 'RESTAURANT_OWNER' && !businessName) {
-      return NextResponse.json(
-        { error: 'Business name is required for restaurant owners' },
-        { status: 400 }
-      )
-    }
-
-    // Create user
-    const result = await AuthService.signup({
-      email,
-      password,
-      name,
-      role,
-      phone,
-      businessName
+  // Validate required fields
+  const validationError = validateRequiredFields({ email, password, name, role }, [
+    'email', 'password', 'name', 'role'
+  ])
+  
+  if (validationError) {
+    return handleServiceResult({
+      success: false,
+      error: validationError
     })
+  }
 
+  // Additional validation for restaurant owners
+  if (role === 'RESTAURANT_OWNER' && !businessName) {
+    return handleServiceResult({
+      success: false,
+      error: {
+        code: 'MISSING_BUSINESS_NAME',
+        message: 'Business name is required for restaurant owners',
+        field: 'businessName'
+      }
+    })
+  }
+
+  // Create user using the service layer
+  const userService = new UserService()
+  const result = await userService.registerUser({
+    email,
+    password,
+    role: role as Role,
+    profile: {
+      create: {
+        firstName: name.split(' ')[0] || name,
+        lastName: name.split(' ').slice(1).join(' ') || '',
+        phone: phone || null,
+        businessName: role === 'RESTAURANT_OWNER' ? businessName : null
+      }
+    }
+  })
+
+  if (result.success) {
     return NextResponse.json({
       success: true,
-      user: result.user,
-      tokens: result.tokens,
-      message: 'Account created successfully. Please check your email to verify your account.'
+      data: {
+        user: result.data,
+        message: 'Account created successfully. Please check your email to verify your account.'
+      }
     })
-
-  } catch (error) {
-    console.error('Signup error:', error)
-    
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
   }
-}
+
+  return handleServiceResult(result)
+})

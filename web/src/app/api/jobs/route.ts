@@ -1,153 +1,91 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
-import { z } from 'zod';
-import { notifyNewJob } from '@/lib/utils/notificationUtils';
-
-// Schema for job creation
-const jobSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  requirements: z.string().optional(),
-  hourlyRate: z.number().positive('Hourly rate must be positive'),
-  startDate: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: 'Start date must be a valid date'
-  }),
-  endDate: z.string().refine(val => !isNaN(Date.parse(val)), {
-    message: 'End date must be a valid date'
-  }),
-  status: z.enum(['DRAFT', 'ACTIVE', 'FILLED', 'CANCELLED']).default('ACTIVE'),
-  maxWorkers: z.number().int().positive('Max workers must be a positive integer').default(1)
-});
+import { JobService } from '@/lib/services/JobService';
+import { 
+  withErrorHandling, 
+  validateRequiredFields, 
+  handleServiceResult,
+  parsePaginationParams,
+  parseFilterParams
+} from '@/lib/middleware/apiResponse';
+import { JobStatus, WorkType } from '@prisma/client';
 
 /**
  * GET /api/jobs
- * Get all jobs (with filtering)
+ * Get all jobs (with filtering and pagination)
  */
-export async function GET(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
-    const url = new URL(request.url);
-    
-    // Parse query parameters
-    const status = url.searchParams.get('status');
-    const restaurantId = url.searchParams.get('restaurantId');
-    const limit = parseInt(url.searchParams.get('limit') || '10');
-    const page = parseInt(url.searchParams.get('page') || '1');
-    const skip = (page - 1) * limit;
-    
-    // Build where clause
-    const where: any = {};
-    
-    if (status) {
-      where.status = status;
-    }
-    
-    if (restaurantId) {
-      where.restaurantId = restaurantId;
-    }
-    
-    // Get jobs with pagination
-    const [jobs, totalCount] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        include: {
-          restaurant: {
-            include: {
-              address: true
-            }
-          },
-          _count: {
-            select: {
-              applications: true
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit
-      }),
-      prisma.job.count({ where })
-    ]);
-    
-    // Format jobs to include formatted address
-    const formattedJobs = jobs.map(job => {
-      const address = job.restaurant.address;
-      const formattedAddress = address 
-        ? `${address.street}, ${address.city}, ${address.state} ${address.zipCode}`
-        : 'No address provided';
-        
-      return {
-        ...job,
-        restaurant: {
-          ...job.restaurant,
-          formattedAddress
-        }
-      };
+export const GET = withErrorHandling(async (request: NextRequest) => {
+  // Parse pagination and filter parameters
+  const { page, limit } = parsePaginationParams(request);
+  const filters = parseFilterParams(request, [
+    'status', 'workType', 'employerId', 'department', 'location', 'salary_min', 'salary_max'
+  ]);
+
+  // Get jobs using the service layer
+  const jobService = new JobService();
+  const result = await jobService.getJobs(filters, page, limit);
+
+  if (result.success) {
+    return handleServiceResult(result, {
+      page,
+      limit,
+      total: result.data!.total,
+      pages: result.data!.pages
     });
-    
-    return NextResponse.json({
-      jobs: formattedJobs,
-      pagination: {
-        total: totalCount,
-        page,
-        limit,
-        pages: Math.ceil(totalCount / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching jobs:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-}
+
+  return handleServiceResult(result);
+});
 
 /**
  * POST /api/jobs
- * Create a new job (for restaurant owners)
+ * Create a new job (for employers)
  */
-export async function POST(request: Request) {
-  try {
-    const session = await getServerSession(authOptions);
+export const POST = withErrorHandling(async (request: NextRequest) => {
+  const session = await getServerSession(authOptions);
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Only restaurant owners can create jobs
-    if (session.user.role !== 'RESTAURANT_OWNER') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const validatedData = jobSchema.parse(body);
-
-    // Get the restaurant for this owner
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { ownerId: session.user.id }
+  if (!session?.user) {
+    return handleServiceResult({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Authentication required' }
     });
+  }
 
-    if (!restaurant) {
-      return NextResponse.json(
-        { error: 'Restaurant not found' },
-        { status: 404 }
-      );
-    }
+  // Only restaurant owners can create jobs
+  if (session.user.role !== 'RESTAURANT_OWNER') {
+    return handleServiceResult({
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Only restaurant owners can create jobs' }
+    });
+  }
 
-    // Create the job
-    const job = await prisma.job.create({
-      data: {
-        ...validatedData,
-        startDate: new Date(validatedData.startDate),
+  const body = await request.json();
+  
+  // Validate required fields
+  const validationError = validateRequiredFields(body, [
+    'title', 'description', 'salary_min', 'salary_max', 'location', 'workType', 'department'
+  ]);
+  
+  if (validationError) {
+    return handleServiceResult({
+      success: false,
+      error: validationError
+    });
+  }
+
+  // Create job using the service layer
+  const jobService = new JobService();
+  const result = await jobService.createJob({
+    ...body,
+    employerId: session.user.id,
+    requirements: body.requirements || '',
+    experience_level: body.experience_level || 'Entry Level',
+    skills_required: body.skills_required || [],
+    benefits: body.benefits || []
+  });
+
+  return handleServiceResult(result);
         endDate: new Date(validatedData.endDate),
         restaurantId: restaurant.id
       }
