@@ -5,10 +5,9 @@ export type CreateUserData = {
   email: string;
   password: string;
   role: Role;
-  firstName?: string;
-  lastName?: string;
+  name: string;
   phone?: string;
-  emailVerified?: Date;
+  emailVerifiedAt?: Date;
 };
 
 export type UpdateUserData = Partial<Omit<CreateUserData, 'password'>> & {

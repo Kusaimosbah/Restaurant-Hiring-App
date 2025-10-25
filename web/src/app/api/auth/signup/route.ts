@@ -4,13 +4,13 @@ import { withErrorHandling, validateRequiredFields, handleServiceResult } from '
 import { Role } from '@prisma/client'
 
 export const POST = withErrorHandling(async (request: NextRequest) => {
-  const { email, password, name, role, phone, businessName } = await request.json()
+  const { email, password, name, role, phone, businessName } = await request.json() 
 
   // Validate required fields
-  const validationError = validateRequiredFields({ email, password, name, role }, [
+  const validationError = validateRequiredFields({ email, password, name, role }, [ 
     'email', 'password', 'name', 'role'
   ])
-  
+
   if (validationError) {
     return handleServiceResult({
       success: false,
@@ -36,24 +36,20 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     email,
     password,
     role: role as Role,
-    profile: {
-      create: {
-        firstName: name.split(' ')[0] || name,
-        lastName: name.split(' ').slice(1).join(' ') || '',
-        phone: phone || null,
-        businessName: role === 'RESTAURANT_OWNER' ? businessName : null
-      }
-    }
+    name,
+    phone: phone || undefined
   })
 
   if (result.success) {
     return NextResponse.json({
       success: true,
       data: {
-        user: result.data,
-        message: 'Account created successfully. Please check your email to verify your account.'
+        id: result.data.id,
+        email: result.data.email,
+        role: result.data.role,
+        name: result.data.name
       }
-    })
+    }, { status: 201 })
   }
 
   return handleServiceResult(result)

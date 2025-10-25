@@ -9,7 +9,6 @@ import {
   parsePaginationParams,
   parseFilterParams
 } from '@/lib/middleware/apiResponse';
-import { JobStatus, WorkType } from '@prisma/client';
 
 /**
  * GET /api/jobs
@@ -86,44 +85,4 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   });
 
   return handleServiceResult(result);
-        endDate: new Date(validatedData.endDate),
-        restaurantId: restaurant.id
-      }
-    });
-
-    // Find workers who might be interested in this job
-    // In a real app, this would use more sophisticated matching
-    const potentialWorkers = await prisma.workerProfile.findMany({
-      take: 10, // Limit to 10 workers for demo purposes
-      include: {
-        user: true
-      }
-    });
-
-    // Notify workers about the new job
-    for (const worker of potentialWorkers) {
-      await notifyNewJob(
-        worker.userId,
-        job.id,
-        job.title,
-        restaurant.name
-      );
-    }
-
-    return NextResponse.json(job);
-  } catch (error) {
-    console.error('Error creating job:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+});
