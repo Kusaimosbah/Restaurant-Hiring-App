@@ -61,9 +61,6 @@ describe('UserRepository', () => {
       expect(result).toEqual(createdUser);
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: userData,
-        include: {
-          profile: true
-        }
       });
     });
 
@@ -110,9 +107,6 @@ describe('UserRepository', () => {
       expect(result).toEqual(user);
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { email },
-        include: {
-          profile: true
-        }
       });
     });
 
@@ -156,9 +150,6 @@ describe('UserRepository', () => {
       expect(result).toEqual(user);
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: userId },
-        include: {
-          profile: true
-        }
       });
     });
 
@@ -214,9 +205,6 @@ describe('UserRepository', () => {
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: updateData,
-        include: {
-          profile: true
-        }
       });
     });
 

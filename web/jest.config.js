@@ -12,7 +12,7 @@ module.exports = {
     '!src/**/__tests__/**',
     '!src/**/node_modules/**',
   ],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],

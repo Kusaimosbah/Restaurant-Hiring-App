@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Suppress hydration warnings for browser extensions
   reactStrictMode: true,
+  // Enable standalone output for Docker builds
+  output: 'standalone',
   experimental: {
     // Enable modern bundling optimizations
     optimizePackageImports: ['@heroicons/react']
