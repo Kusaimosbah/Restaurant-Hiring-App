@@ -146,7 +146,7 @@ export class UserRepository extends BaseRepository<User> {
     return await this.db.user.update({
       where: { id },
       data: { 
-        emailVerified: new Date(),
+        emailVerifiedAt: new Date(),
         updatedAt: new Date()
       }
     });

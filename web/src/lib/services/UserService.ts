@@ -17,12 +17,20 @@ export class UserService {
   /**
    * Register a new user with validation and business rules
    */
-  async registerUser(userData: CreateUserData): Promise<ServiceResult<User>> {
+  async registerUser(userData: CreateUserData, profileData?: {
+    businessName?: string;
+    preferredWorkTypes?: string[];
+    experienceLevel?: string;
+    receiveNotifications?: boolean;
+  }): Promise<ServiceResult<User>> {
     try {
       // Validate business rules
       const validation = await this.validateUserRegistration(userData);
       if (!validation.success) {
-        return validation;
+        return {
+          success: false,
+          error: validation.error!
+        };
       }
 
       // Check if user already exists
@@ -46,6 +54,11 @@ export class UserService {
         ...userData,
         password: hashedPassword
       });
+
+      // Handle additional profile data
+      if (profileData) {
+        await this.handleAdditionalProfileData(user.id, user.role, profileData);
+      }
 
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
@@ -177,5 +190,89 @@ export class UserService {
     }
 
     return { success: true, data: true };
+  }
+
+  /**
+   * Handle additional profile data after user creation
+   */
+  private async handleAdditionalProfileData(
+    userId: string, 
+    role: Role, 
+    profileData: {
+      businessName?: string;
+      preferredWorkTypes?: string[];
+      experienceLevel?: string;
+      receiveNotifications?: boolean;
+    }
+  ): Promise<void> {
+    try {
+      // Import prisma client directly for this operation
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+
+      if (role === 'RESTAURANT_OWNER' && profileData.businessName) {
+        // Create restaurant profile
+        await prisma.restaurant.upsert({
+          where: { ownerId: userId },
+          create: {
+            name: profileData.businessName,
+            ownerId: userId
+          },
+          update: {
+            name: profileData.businessName
+          }
+        });
+      }
+
+      if (role === 'WORKER') {
+        // Create worker profile
+        await prisma.workerProfile.upsert({
+          where: { userId: userId },
+          create: {
+            userId: userId,
+            bio: `Experience Level: ${profileData.experienceLevel || 'Entry Level'}`,
+            // Store preferred work types as skills for now
+            skills: profileData.preferredWorkTypes || []
+          },
+          update: {
+            bio: `Experience Level: ${profileData.experienceLevel || 'Entry Level'}`,
+            skills: profileData.preferredWorkTypes || []
+          }
+        });
+      }
+
+      // Handle notification preferences
+      if (profileData.receiveNotifications !== undefined) {
+        await prisma.notificationPreference.upsert({
+          where: { userId: userId },
+          create: {
+            userId: userId,
+            emailEnabled: profileData.receiveNotifications,
+            pushEnabled: profileData.receiveNotifications,
+            inAppEnabled: true, // Always enable in-app notifications
+            applicationUpdates: profileData.receiveNotifications,
+            messages: true, // Always enable messages
+            jobPostings: profileData.receiveNotifications,
+            shiftReminders: profileData.receiveNotifications,
+            reviewsAndRatings: profileData.receiveNotifications,
+            paymentUpdates: profileData.receiveNotifications
+          },
+          update: {
+            emailEnabled: profileData.receiveNotifications,
+            pushEnabled: profileData.receiveNotifications,
+            applicationUpdates: profileData.receiveNotifications,
+            jobPostings: profileData.receiveNotifications,
+            shiftReminders: profileData.receiveNotifications,
+            reviewsAndRatings: profileData.receiveNotifications,
+            paymentUpdates: profileData.receiveNotifications
+          }
+        });
+      }
+
+      await prisma.$disconnect();
+    } catch (error) {
+      console.error('Error handling additional profile data:', error);
+      // Don't throw - user creation succeeded, profile data is secondary
+    }
   }
 }
