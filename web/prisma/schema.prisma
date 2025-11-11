@@ -31,6 +31,20 @@ model User {
   notificationPreference  NotificationPreference?
   notificationDevices     NotificationDevice[]
   trainingProgress        TrainingProgress[]
+  savedSearches           SavedSearch[]
+  conversationParticipants ConversationParticipant[]
+  messageReactions        MessageReaction[]
+  typingIndicators        TypingIndicator[]
+  activities              UserActivity[]
+  // Security relations
+  twoFactorAuth           TwoFactorAuth?
+  securityLogs            SecurityLog[]
+  auditLogs               AuditLog[]
+  userSessions            UserSession[]
+  dataRetention           DataRetention?
+  securityAlerts          SecurityAlert[]
+  resolvedAlerts          SecurityAlert[] @relation("SecurityAlertResolver")
+  matchCalculations       MatchCalculation[]
 
   @@map("users")
 }
@@ -58,6 +72,11 @@ model Restaurant {
   shiftAssignments    ShiftAssignment[]
   reviewsToWorkers    ReviewWorker[]
   reviewsFromWorkers  ReviewRestaurant[]
+  integrations        Integration[]
+  hiringMetrics       HiringMetric[]
+  performanceReports  PerformanceReport[]
+  costAnalyses        CostAnalysis[]
+  jobInvitations      JobInvitation[]
 
   @@map("restaurants")
 }
@@ -154,31 +173,24 @@ model WorkerProfile {
   state             String?
   zipCode           String?
   
-  user              User               @relation(fields: [userId], references: [id])
-  applications      Application[]
-  shiftAssignments  ShiftAssignment[]
-  reviewsFromRestaurants ReviewWorker[]
-  reviewsToRestaurants ReviewRestaurant[]
-  workerSkills      WorkerSkill[]
-  certifications    Certification[]
-  documents         WorkerDocument[]
+  user                        User               @relation(fields: [userId], references: [id])
+  applications                Application[]
+  shiftAssignments            ShiftAssignment[]
+  reviewsFromRestaurants      ReviewWorker[]
+  reviewsToRestaurants        ReviewRestaurant[]
+  workerSkills                WorkerSkill[]
+  certifications              Certification[]
+  documents                   WorkerDocument[]
+  matches                     JobMatch[]
+  preferences                 WorkerPreferences?
+  matchCalculations           MatchCalculation[]
+  jobInvitations              JobInvitation[]
+  lastRecommendationRefresh   DateTime?
 
   @@map("worker_profiles")
 }
 
-model WorkerSkill {
-  id              String        @id @default(cuid())
-  name            String
-  level           SkillLevel
-  yearsExperience Int?
-  workerProfileId String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  workerProfile   WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
 
-  @@index([workerProfileId])
-  @@map("worker_skills")
-}
 
 model Certification {
   id              String        @id @default(cuid())
@@ -225,9 +237,15 @@ model Job {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   restaurantId    String
-  restaurant      Restaurant        @relation(fields: [restaurantId], references: [id])
-  applications    Application[]
-  shiftAssignments ShiftAssignment[]
+  restaurant        Restaurant        @relation(fields: [restaurantId], references: [id])
+  applications      Application[]
+  shiftAssignments  ShiftAssignment[]
+  matches           JobMatch[]
+  requirements_new  JobRequirement[]
+  conversations     Conversation[]
+  analytics         JobAnalytics?
+  matchCalculations MatchCalculation[]
+  jobInvitations    JobInvitation[]
 
   @@map("jobs")
 }
@@ -247,6 +265,8 @@ model Application {
   worker          WorkerProfile     @relation(fields: [workerId], references: [id], onDelete: Cascade)
   messages        Message[]
   shiftAssignment ShiftAssignment?
+  conversations   Conversation[]
+  analytics       ApplicationAnalytics?
 
   @@unique([jobId, workerId])
   @@map("applications")
@@ -303,18 +323,110 @@ model ReviewRestaurant {
 }
 
 model Message {
-  id            String      @id @default(cuid())
+  id            String         @id @default(cuid())
   content       String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  messageType   MessageType    @default(TEXT)
+  fileUrl       String?        // For file attachments
+  fileName      String?        // Original file name
+  fileSize      Int?           // File size in bytes
+  fileMimeType  String?        // MIME type of the file
+  isRead        Boolean        @default(false)
+  isEdited      Boolean        @default(false)
+  editedAt      DateTime?
+  replyToId     String?        // For threaded conversations
+  conversationId String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   senderId      String
   recipientId   String
   applicationId String?
-  sender        User        @relation("SentMessages", fields: [senderId], references: [id])
-  recipient     User        @relation("ReceivedMessages", fields: [recipientId], references: [id])
-  application   Application? @relation(fields: [applicationId], references: [id])
+  
+  sender        User           @relation("SentMessages", fields: [senderId], references: [id])
+  recipient     User           @relation("ReceivedMessages", fields: [recipientId], references: [id])
+  application   Application?   @relation(fields: [applicationId], references: [id])
+  conversation  Conversation   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyTo       Message?       @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies       Message[]      @relation("MessageReplies")
+  reactions     MessageReaction[]
 
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([createdAt])
+  @@index([isRead])
   @@map("messages")
+}
+
+model Conversation {
+  id              String           @id @default(cuid())
+  title           String?          // Optional conversation title
+  type            ConversationType @default(DIRECT)
+  isActive        Boolean          @default(true)
+  lastMessageAt   DateTime?
+  lastMessageId   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  applicationId   String?          // Link to job application if applicable
+  jobId           String?          // Link to job if applicable
+  
+  messages        Message[]
+  participants    ConversationParticipant[]
+  application     Application?     @relation(fields: [applicationId], references: [id])
+  job             Job?             @relation(fields: [jobId], references: [id])
+  typingUsers     TypingIndicator[]
+
+  @@index([applicationId])
+  @@index([jobId])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  role           ParticipantRole @default(MEMBER)
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?    // When user last read messages
+  isActive       Boolean      @default(true)
+  mutedUntil     DateTime?    // Mute notifications until this time
+  
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   // Unicode emoji
+  createdAt DateTime @default(now())
+  
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("message_reactions")
+}
+
+model TypingIndicator {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  isTyping       Boolean      @default(true)
+  lastTypingAt   DateTime     @default(now())
+  
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@map("typing_indicators")
 }
 
 model EmailVerificationToken {
@@ -500,6 +612,28 @@ enum NotificationType {
   PROFILE_VIEW
 }
 
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+  EMOJI_ONLY
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+  APPLICATION_THREAD
+  JOB_DISCUSSION
+  SUPPORT
+}
+
+enum ParticipantRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
 enum MaterialType {
   VIDEO
   DOCUMENT
@@ -511,4 +645,673 @@ enum ProgressStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+model SavedSearch {
+  id             String    @id @default(cuid())
+  name           String
+  description    String?
+  filters        String    // JSON string of SearchFilters
+  searchType     String    // 'jobs' | 'applications' | 'workers'
+  userId         String
+  isActive       Boolean   @default(true)
+  alertsEnabled  Boolean   @default(false)
+  lastExecuted   DateTime?
+  resultCount    Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_searches")
+}
+
+model Integration {
+  id              String            @id @default(cuid())
+  name            String
+  providerId      String
+  restaurantId    String
+  status          IntegrationStatus @default(PENDING_AUTH)
+  config          String            // JSON string of IntegrationConfig
+  credentials     String            // Encrypted credentials
+  webhookUrl      String?
+  lastSync        DateTime?
+  lastError       String?
+  syncFrequency   SyncFrequency     @default(DAILY)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  restaurant      Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  syncLogs        IntegrationSync[]
+  
+  @@map("integrations")
+}
+
+model IntegrationSync {
+  id              String              @id @default(cuid())
+  integrationId   String
+  status          IntegrationSyncStatus
+  direction       SyncDirection
+  recordsProcessed Int               @default(0)
+  recordsSucceeded Int               @default(0)
+  recordsFailed   Int                @default(0)
+  errors          String?            // JSON array of errors
+  duration        Int                // milliseconds
+  triggeredBy     String?            // USER_ID or SYSTEM
+  createdAt       DateTime           @default(now())
+  
+  integration     Integration        @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  @@map("integration_syncs")
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  SYNCING
+  PENDING_AUTH
+}
+
+enum SyncFrequency {
+  REAL_TIME
+  HOURLY
+  DAILY
+  WEEKLY
+  MANUAL
+}
+
+enum IntegrationSyncStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum SyncDirection {
+  INBOUND
+  OUTBOUND
+  BIDIRECTIONAL
+}
+
+model JobMatch {
+  id                String           @id @default(cuid())
+  jobId             String
+  workerId          String
+  overallScore      Float            // 0-100 match score
+  skillScore        Float            // Skills matching score
+  experienceScore   Float            // Experience matching score
+  locationScore     Float            // Location proximity score
+  availabilityScore Float            // Schedule compatibility score
+  salaryScore       Float            // Salary expectation score
+  algorithmVersion  String           @default("1.0")
+  isActive          Boolean          @default(true)
+  matchedAt         DateTime         @default(now())
+  lastUpdated       DateTime         @updatedAt
+  
+  job               Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker            WorkerProfile    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  skillMatches      SkillMatch[]
+  matchingLog       JobMatchingLog[]
+
+  @@unique([jobId, workerId])
+  @@index([jobId])
+  @@index([workerId])
+  @@index([overallScore])
+  @@map("job_matches")
+}
+
+model SkillMatch {
+  id           String   @id @default(cuid())
+  jobMatchId   String
+  skillName    String
+  requiredLevel String? // Required skill level from job
+  workerLevel  String   // Worker's skill level
+  matchScore   Float    // 0-100 score for this skill
+  weight       Float    // Importance weight for this skill
+  createdAt    DateTime @default(now())
+  
+  jobMatch     JobMatch @relation(fields: [jobMatchId], references: [id], onDelete: Cascade)
+
+  @@index([jobMatchId])
+  @@map("skill_matches")
+}
+
+model JobMatchingLog {
+  id             String      @id @default(cuid())
+  jobMatchId     String
+  event          String      // 'CREATED', 'UPDATED', 'SCORE_CHANGED', 'DEACTIVATED'
+  oldScore       Float?
+  newScore       Float?
+  changes        Json?       // JSON object describing what changed
+  triggerReason  String?     // What triggered the recalculation
+  processingTime Int?        // Processing time in milliseconds
+  createdAt      DateTime    @default(now())
+  
+  jobMatch       JobMatch    @relation(fields: [jobMatchId], references: [id], onDelete: Cascade)
+
+  @@index([jobMatchId])
+  @@index([createdAt])
+  @@map("job_matching_logs")
+}
+
+model JobRequirement {
+  id                String    @id @default(cuid())
+  jobId             String
+  skillName         String
+  requiredLevel     SkillLevel
+  isRequired        Boolean   @default(true)
+  weight            Float     @default(1.0) // Importance weight
+  yearsExperience   Int?      // Minimum years of experience for this skill
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  job               Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@map("job_requirements")
+}
+
+model WorkerPreferences {
+  id                    String        @id @default(cuid())
+  workerId              String        @unique
+  minHourlyRate         Float?
+  maxHourlyRate         Float?
+  preferredRadius       Int?          // Miles from worker's location
+  availableDays         String[]      // Days of week
+  availableTimeSlots    Json?         // Time slots per day
+  workEnvironmentPref   String[]      // Fast-paced, casual, fine-dining, etc.
+  shiftLengthPref       String?       // Short, medium, long shifts
+  transportationAccess  Boolean       @default(true)
+  willingToTravel       Boolean       @default(false)
+  notificationSettings  Json?         // Notification preferences
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  
+  worker                WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@map("worker_preferences")
+}
+
+// Analytics and Reporting Models
+model HiringMetric {
+  id               String            @id @default(cuid())
+  restaurantId     String
+  metricType       HiringMetricType
+  metricName       String
+  value            Float
+  metadata         Json?             // Additional context/breakdown
+  period           MetricPeriod
+  periodStart      DateTime
+  periodEnd        DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  restaurant       Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, metricType])
+  @@index([periodStart, periodEnd])
+  @@map("hiring_metrics")
+}
+
+model ApplicationAnalytics {
+  id                String     @id @default(cuid())
+  applicationId     String     @unique
+  viewCount         Int        @default(0)
+  viewDuration      Int?       // Total viewing time in seconds
+  stageTransitions  Json?      // Array of stage changes with timestamps
+  responseTime      Int?       // Time to first response in hours
+  timeToHire        Int?       // Total time to hire in hours
+  interactionCount  Int        @default(0) // Messages, calls, etc.
+  sourceChannel     String?    // How they found the job
+  deviceInfo        Json?      // Device/browser info
+  locationData      Json?      // Geographic data
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("application_analytics")
+}
+
+model JobAnalytics {
+  id                  String     @id @default(cuid())
+  jobId               String     @unique
+  viewCount           Int        @default(0)
+  uniqueViewCount     Int        @default(0)
+  applicationCount    Int        @default(0)
+  conversionRate      Float?     // Applications per view
+  averageTimeToApply  Int?       // Minutes from view to application
+  topSkillsRequested  String[]   // Most common skills
+  averageHourlyRate   Float?
+  competitionScore    Float?     // Compared to similar jobs
+  performanceScore    Float?     // Overall job performance
+  sourceBreakdown     Json?      // Where views/applications came from
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  
+  job                 Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_analytics")
+}
+
+model UserActivity {
+  id            String           @id @default(cuid())
+  userId        String
+  activityType  UserActivityType
+  description   String
+  metadata      Json?            // Additional activity data
+  ipAddress     String?
+  userAgent     String?
+  sessionId     String?
+  duration      Int?             // Activity duration in milliseconds
+  createdAt     DateTime         @default(now())
+  
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, activityType])
+  @@index([createdAt])
+  @@map("user_activities")
+}
+
+model PerformanceReport {
+  id                String         @id @default(cuid())
+  restaurantId      String
+  reportType        ReportType
+  title             String
+  description       String?
+  data              Json           // Report data and visualizations
+  metrics           Json           // Key performance indicators
+  insights          Json           // AI-generated insights
+  recommendations   Json           // Improvement suggestions
+  periodStart       DateTime
+  periodEnd         DateTime
+  generatedBy       String?        // User ID who generated the report
+  isScheduled       Boolean        @default(false)
+  scheduleConfig    Json?          // Scheduled report configuration
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  restaurant        Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, reportType])
+  @@index([createdAt])
+  @@map("performance_reports")
+}
+
+model CostAnalysis {
+  id                    String     @id @default(cuid())
+  restaurantId          String
+  period                MetricPeriod
+  periodStart           DateTime
+  periodEnd             DateTime
+  
+  // Cost Metrics
+  totalHiringCost       Float      // Total cost for the period
+  costPerHire           Float      // Average cost per successful hire
+  costPerApplication    Float      // Cost per application received
+  advertisingCost       Float      // Job posting and marketing costs
+  screeningCost         Float      // Time and resources for screening
+  interviewCost         Float      // Interview-related costs
+  onboardingCost        Float      // Training and onboarding costs
+  agencyCost            Float      // Third-party recruiting costs
+  platformCost          Float      // Platform subscription/usage costs
+  
+  // Efficiency Metrics
+  timeToFill            Float      // Average days to fill positions
+  sourceEfficiency      Json       // Cost effectiveness by source
+  stageConversion       Json       // Conversion rates at each stage
+  qualityMetrics        Json       // Hire quality indicators
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@index([restaurantId, period])
+  @@map("cost_analyses")
+}
+
+model BenchmarkData {
+  id                String       @id @default(cuid())
+  industry          String       // Restaurant industry segment
+  region            String       // Geographic region
+  companySize       String       // Small, Medium, Large
+  metricType        String       // Type of benchmark metric
+  metricName        String       // Specific metric name
+  value             Float        // Benchmark value
+  percentile        Float        // Industry percentile
+  dataSource        String       // Source of benchmark data
+  period            MetricPeriod
+  periodStart       DateTime
+  periodEnd         DateTime
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([industry, region, companySize])
+  @@index([metricType, metricName])
+  @@map("benchmark_data")
+}
+
+// Enums for Analytics
+enum HiringMetricType {
+  TIME_TO_FILL
+  COST_PER_HIRE
+  APPLICATION_VOLUME
+  CONVERSION_RATE
+  QUALITY_SCORE
+  RETENTION_RATE
+  SOURCING_EFFECTIVENESS
+  CANDIDATE_EXPERIENCE
+  INTERVIEW_EFFICIENCY
+  OFFER_ACCEPTANCE_RATE
+}
+
+enum MetricPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum UserActivityType {
+  LOGIN
+  LOGOUT
+  JOB_VIEW
+  JOB_APPLICATION
+  MESSAGE_SENT
+  PROFILE_UPDATE
+  SEARCH_PERFORMED
+  FILTER_APPLIED
+  REPORT_GENERATED
+  INTEGRATION_SYNC
+  NOTIFICATION_CLICKED
+  FILE_UPLOAD
+  SKILL_ASSESSMENT
+  TRAINING_COMPLETION
+}
+
+enum ReportType {
+  HIRING_OVERVIEW
+  COST_ANALYSIS
+  PERFORMANCE_TRENDS
+  CANDIDATE_PIPELINE
+  SOURCE_EFFECTIVENESS
+  TIME_TO_FILL_ANALYSIS
+  QUALITY_METRICS
+  COMPETITIVE_ANALYSIS
+  FORECASTING
+  CUSTOM
+}
+
+// Security Models
+model TwoFactorAuth {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  secret       String   // TOTP secret key
+  backupCodes  String[] // Hashed backup codes
+  isEnabled    Boolean  @default(false)
+  enabledAt    DateTime?
+  disabledAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("two_factor_auth")
+}
+
+model SecurityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  event     SecurityEventType
+  metadata  Json?    // Additional event data
+  ipAddress String?
+  userAgent String?
+  success   Boolean  @default(true)
+  risk      RiskLevel @default(LOW)
+  timestamp DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([event, timestamp])
+  @@map("security_logs")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  action       AuditAction
+  resource     String   // Resource type (user, job, application, etc.)
+  resourceId   String?  // ID of the affected resource
+  oldValues    Json?    // Previous values
+  newValues    Json?    // New values
+  ipAddress    String?
+  userAgent    String?
+  timestamp    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, timestamp])
+  @@index([action, timestamp])
+  @@index([resource, resourceId])
+  @@map("audit_logs")
+}
+
+model RolePermission {
+  id         String @id @default(cuid())
+  roleName   String
+  permission String
+  resource   String
+  conditions Json?  // Conditional permissions
+
+  @@unique([roleName, permission, resource])
+  @@map("role_permissions")
+}
+
+model UserSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  device       String?
+  ipAddress    String?
+  userAgent    String?
+  location     String?
+  isActive     Boolean  @default(true)
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([sessionToken])
+  @@map("user_sessions")
+}
+
+model DataRetention {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  dataType      DataType
+  retentionDate DateTime // When data should be deleted
+  status        RetentionStatus @default(PENDING)
+  requestedAt   DateTime @default(now())
+  processedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([retentionDate, status])
+  @@map("data_retention")
+}
+
+model SecurityAlert {
+  id          String      @id @default(cuid())
+  userId      String?
+  alertType   AlertType
+  severity    AlertSeverity
+  title       String
+  description String
+  metadata    Json?
+  isResolved  Boolean     @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+
+  user     User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resolver User?  @relation("SecurityAlertResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([userId, isResolved])
+  @@index([alertType, severity])
+  @@map("security_alerts")
+}
+
+// Security Enums
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGED
+  EMAIL_CHANGED
+  TWO_FACTOR_ENABLED
+  TWO_FACTOR_DISABLED
+  TWO_FACTOR_SUCCESS
+  TWO_FACTOR_FAILED
+  ACCOUNT_LOCKED
+  ACCOUNT_UNLOCKED
+  SUSPICIOUS_ACTIVITY
+  DATA_EXPORT
+  DATA_DELETION
+  PERMISSION_CHANGED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  SHARE
+  DOWNLOAD
+}
+
+enum DataType {
+  PERSONAL_INFO
+  APPLICATION_DATA
+  COMMUNICATION_DATA
+  USAGE_DATA
+  ALL_DATA
+}
+
+enum RetentionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AlertType {
+  FAILED_LOGIN_ATTEMPTS
+  SUSPICIOUS_LOCATION
+  DATA_BREACH
+  UNAUTHORIZED_ACCESS
+  POLICY_VIOLATION
+  SYSTEM_VULNERABILITY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Job Matching Models
+model MatchCalculation {
+  id                String   @id @default(cuid())
+  jobId             String
+  workerId          String
+  overallScore      Float
+  skillsScore       Float
+  experienceScore   Float
+  locationScore     Float
+  availabilityScore Float
+  salaryScore       Float
+  cultureScore      Float
+  confidence        Float
+  calculatedBy      String
+  calculatedAt      DateTime @default(now())
+  
+  job    Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [calculatedBy], references: [id])
+
+  @@unique([jobId, workerId, calculatedAt])
+  @@map("match_calculations")
+}
+
+model JobInvitation {
+  id           String            @id @default(cuid())
+  jobId        String
+  workerId     String
+  restaurantId String
+  message      String?
+  status       InvitationStatus  @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  respondedAt  DateTime?
+  
+  job        Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker     WorkerProfile @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  restaurant Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, workerId])
+  @@map("job_invitations")
+}
+
+model Skill {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  category    String
+  description String?
+  createdAt   DateTime      @default(now())
+  
+  workerSkills WorkerSkill[]
+
+  @@map("skills")
+}
+
+model WorkerSkill {
+  id              String   @id @default(cuid())
+  workerProfileId String
+  skillId         String
+  level           String   // beginner, intermediate, advanced, expert
+  yearsExperience Int?
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  
+  workerProfile WorkerProfile @relation(fields: [workerProfileId], references: [id], onDelete: Cascade)
+  skill         Skill         @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([workerProfileId, skillId])
+  @@map("worker_skills")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
 }

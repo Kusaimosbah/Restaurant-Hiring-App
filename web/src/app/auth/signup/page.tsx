@@ -4,6 +4,13 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+// Helper function to safely render error messages
+const safeErrorMessage = (error: any): string => {
+  if (typeof error === 'string') return error
+  if (typeof error === 'object' && error?.message) return String(error.message)
+  return 'An error occurred'
+}
+
 function SignUpForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -198,7 +205,12 @@ function SignUpForm() {
           name: formData.name,
           role: formData.role,
           phone: formData.phone || undefined,
-          businessName: formData.businessName || undefined
+          businessName: formData.businessName || undefined,
+          preferredWorkTypes: formData.preferredWorkTypes,
+          experienceLevel: formData.experienceLevel,
+          acceptTerms: formData.acceptTerms,
+          acceptPrivacy: formData.acceptPrivacy,
+          receiveNotifications: formData.receiveNotifications
         }),
       })
 
@@ -212,8 +224,26 @@ function SignUpForm() {
           router.push('/auth/signin?message=Account created successfully! You can now sign in.')
         }, 2000)
       } else {
-        // Show error message
-        setErrors({ general: data.error || 'Failed to create account' })
+        // Show error message - extract message from error object with robust handling
+        let errorMessage = 'Failed to create account'
+        let fieldName = 'general'
+        
+        if (data?.error) {
+          if (typeof data.error === 'string') {
+            errorMessage = data.error
+          } else if (typeof data.error === 'object' && data.error.message) {
+            errorMessage = String(data.error.message)
+            // If there's a specific field mentioned, show error on that field
+            if (data.error.field && typeof data.error.field === 'string') {
+              fieldName = data.error.field
+            }
+          } else if (typeof data.error === 'object') {
+            // Fallback for any object - just use a generic message
+            errorMessage = 'Registration failed. Please check your information and try again.'
+          }
+        }
+        
+        setErrors({ [fieldName]: errorMessage })
         setSuccess(false)
       }
     } catch (error) {
@@ -253,7 +283,7 @@ function SignUpForm() {
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              {errors.general}
+              {safeErrorMessage(errors.general)}
             </div>
           )}
 
@@ -277,7 +307,7 @@ function SignUpForm() {
                     value={formData.name}
                     onChange={handleChange}
                   />
-                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                  {errors.name && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.name)}</p>}
                 </div>
 
                 <div>
@@ -295,7 +325,7 @@ function SignUpForm() {
                     value={formData.email}
                     onChange={handleChange}
                   />
-                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                  {errors.email && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.email)}</p>}
                 </div>
 
                 <div>
@@ -311,7 +341,7 @@ function SignUpForm() {
                     value={formData.phone}
                     onChange={handleChange}
                   />
-                  {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                  {errors.phone && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.phone)}</p>}
                 </div>
               </div>
             </div>
@@ -350,7 +380,7 @@ function SignUpForm() {
                     value={formData.businessName}
                     onChange={handleChange}
                   />
-                  {errors.businessName && <p className="mt-1 text-sm text-red-600">{errors.businessName}</p>}
+                  {errors.businessName && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.businessName)}</p>}
                 </div>
               )}
 
@@ -381,7 +411,7 @@ function SignUpForm() {
                       </label>
                     ))}
                   </div>
-                  {errors.preferredWorkTypes && <p className="mt-1 text-sm text-red-600">{errors.preferredWorkTypes}</p>}
+                  {errors.preferredWorkTypes && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.preferredWorkTypes)}</p>}
 
                   <div className="mt-4">
                     <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1">
@@ -452,7 +482,7 @@ function SignUpForm() {
                   <p className="mt-1 text-xs text-gray-500">
                     Must be at least 12 characters with uppercase, lowercase, numbers, and special characters
                   </p>
-                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                  {errors.password && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.password)}</p>}
                 </div>
 
                 <div>
@@ -470,7 +500,7 @@ function SignUpForm() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                   />
-                  {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{safeErrorMessage(errors.confirmPassword)}</p>}
                 </div>
               </div>
             </div>
@@ -496,7 +526,7 @@ function SignUpForm() {
                     *
                   </span>
                 </label>
-                {errors.acceptTerms && <p className="ml-6 text-sm text-red-600">{errors.acceptTerms}</p>}
+                {errors.acceptTerms && <p className="ml-6 text-sm text-red-600">{safeErrorMessage(errors.acceptTerms)}</p>}
 
                 <label className="flex items-start">
                   <input
@@ -514,7 +544,7 @@ function SignUpForm() {
                     *
                   </span>
                 </label>
-                {errors.acceptPrivacy && <p className="ml-6 text-sm text-red-600">{errors.acceptPrivacy}</p>}
+                {errors.acceptPrivacy && <p className="ml-6 text-sm text-red-600">{safeErrorMessage(errors.acceptPrivacy)}</p>}
 
                 <label className="flex items-start">
                   <input

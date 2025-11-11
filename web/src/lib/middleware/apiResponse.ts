@@ -99,6 +99,11 @@ export function handleServiceResult<T>(
     case 'INVALID_SALARY_RANGE':
     case 'INVALID_WORK_TYPE':
     case 'INVALID_LOCATION':
+    case 'MISSING_WORK_TYPES':
+    case 'MISSING_BUSINESS_NAME':
+    case 'TERMS_NOT_ACCEPTED':
+    case 'PRIVACY_NOT_ACCEPTED':
+    case 'MISSING_REQUIRED_FIELDS':
       statusCode = 400;
       break;
     default:

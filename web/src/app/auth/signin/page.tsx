@@ -149,8 +149,8 @@ function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 auth-container">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-gray-50 py-4 sm:py-12 px-4 sm:px-6 lg:px-8 auth-container overflow-y-auto">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8 my-auto">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold signin-heading">
             Sign in to your account

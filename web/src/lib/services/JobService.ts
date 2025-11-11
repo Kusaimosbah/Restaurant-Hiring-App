@@ -1,6 +1,7 @@
 import { Job, JobStatus, WorkType } from '@prisma/client';
 import { JobRepository, CreateJobData, UpdateJobData, JobFilters } from '@/lib/repositories/JobRepository';
 import { ServiceResult, BusinessError } from '@/lib/domain/types';
+import { WorkflowEngine } from './WorkflowEngine';
 
 /**
  * Job Service - Business logic for job management
@@ -26,6 +27,21 @@ export class JobService {
 
       // Create the job
       const job = await this.jobRepository.create(jobData);
+
+      // Trigger workflow event for new job posting
+      try {
+        const workflowEngine = WorkflowEngine.getInstance();
+        await workflowEngine.triggerWorkflow('JOB_POSTED', {
+          jobId: job.id,
+          restaurantId: job.restaurantId,
+          jobTitle: job.title,
+          hourlyRate: job.hourlyRate,
+          maxWorkers: job.maxWorkers
+        }, job.restaurantId);
+      } catch (workflowError) {
+        console.error('Workflow trigger failed:', workflowError);
+        // Don't fail the job creation if workflow fails
+      }
 
       return {
         success: true,

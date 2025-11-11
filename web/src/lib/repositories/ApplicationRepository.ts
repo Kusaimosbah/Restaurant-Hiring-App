@@ -400,4 +400,201 @@ export class ApplicationRepository extends BaseRepository<Application> {
       );
     }
   }
+
+  /**
+   * Find applications by multiple IDs
+   */
+  async findByIds(ids: string[]): Promise<Application[]> {
+    try {
+      const applications = await this.db.application.findMany({
+        where: {
+          id: {
+            in: ids
+          }
+        },
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true,
+              employerId: true,
+              employer: {
+                select: {
+                  id: true,
+                  email: true,
+                  profile: true
+                }
+              }
+            }
+          },
+          applicant: {
+            select: {
+              id: true,
+              email: true,
+              profile: true
+            }
+          }
+        }
+      });
+
+      return applications;
+    } catch (error) {
+      throw new AppError(
+        'Failed to fetch applications by IDs',
+        500,
+        'APPLICATION_FETCH_ERROR',
+        { ids, originalError: error instanceof Error ? error.message : 'Unknown error' }
+      );
+    }
+  }
+
+  /**
+   * Bulk update applications
+   */
+  async bulkUpdate(ids: string[], data: UpdateApplicationData): Promise<Application[]> {
+    try {
+      // Update all applications
+      await this.db.application.updateMany({
+        where: {
+          id: {
+            in: ids
+          }
+        },
+        data: {
+          ...data,
+          updatedAt: new Date()
+        }
+      });
+
+      // Return updated applications with relations
+      const applications = await this.findByIds(ids);
+      return applications;
+    } catch (error) {
+      throw new AppError(
+        'Failed to bulk update applications',
+        500,
+        'APPLICATION_BULK_UPDATE_ERROR',
+        { ids, originalError: error instanceof Error ? error.message : 'Unknown error' }
+      );
+    }
+  }
+
+  /**
+   * Find application by ID with detailed relations
+   */
+  async findByIdWithDetails(id: string): Promise<Application | null> {
+    try {
+      const application = await this.db.application.findUnique({
+        where: { id },
+        include: {
+          job: {
+            include: {
+              employer: {
+                include: {
+                  profile: true
+                }
+              }
+            }
+          },
+          applicant: {
+            include: {
+              profile: true,
+              resume: true,
+              experience: true,
+              education: true,
+              skills: true,
+              certifications: true
+            }
+          },
+          interviews: true,
+          messages: {
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  email: true,
+                  profile: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return application;
+    } catch (error) {
+      throw new AppError(
+        'Failed to fetch application details',
+        500,
+        'APPLICATION_DETAILS_ERROR',
+        { id, originalError: error instanceof Error ? error.message : 'Unknown error' }
+      );
+    }
+  }
+
+  /**
+   * Get comprehensive statistics for dashboard
+   */
+  async getComprehensiveStats(employerId: string, fromDate: Date): Promise<any> {
+    try {
+      const where = {
+        job: { employerId },
+        createdAt: { gte: fromDate }
+      };
+
+      const applications = await this.db.application.findMany({
+        where,
+        include: {
+          job: {
+            select: {
+              id: true,
+              title: true
+            }
+          }
+        }
+      });
+
+      // Calculate various statistics
+      const totalApplications = applications.length;
+      const statusBreakdown = applications.reduce((acc, app) => {
+        acc[app.status] = (acc[app.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const jobStats = applications.reduce((acc, app) => {
+        const jobId = app.jobId;
+        const jobTitle = app.job.title;
+        
+        if (!acc[jobId]) {
+          acc[jobId] = {
+            jobId,
+            jobTitle,
+            total: 0,
+            pending: 0,
+            accepted: 0,
+            rejected: 0
+          };
+        }
+        
+        acc[jobId].total++;
+        acc[jobId][app.status.toLowerCase()]++;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      return {
+        totalApplications,
+        statusBreakdown,
+        jobStats: Object.values(jobStats),
+        applications: applications.slice(0, 10) // Recent 10 for timeline
+      };
+    } catch (error) {
+      throw new AppError(
+        'Failed to fetch comprehensive statistics',
+        500,
+        'APPLICATION_COMPREHENSIVE_STATS_ERROR',
+        { employerId, fromDate, originalError: error instanceof Error ? error.message : 'Unknown error' }
+      );
+    }
+  }
 }

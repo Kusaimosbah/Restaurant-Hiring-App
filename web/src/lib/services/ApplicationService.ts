@@ -3,6 +3,7 @@ import { ApplicationRepository, CreateApplicationData, UpdateApplicationData, Ap
 import { JobRepository } from '@/lib/repositories/JobRepository';
 import { UserRepository } from '@/lib/repositories/UserRepository';
 import { ServiceResult, BusinessError } from '@/lib/domain/types';
+import { WorkflowEngine } from './WorkflowEngine';
 
 /**
  * Application Service - Business logic for job applications
@@ -82,6 +83,21 @@ export class ApplicationService {
 
       // Create the application
       const application = await this.applicationRepository.create(applicationData);
+
+      // Trigger workflow event for new application
+      try {
+        const workflowEngine = WorkflowEngine.getInstance();
+        await workflowEngine.triggerWorkflow('APPLICATION_SUBMITTED', {
+          applicationId: application.id,
+          jobId: application.jobId,
+          workerId: application.workerId,
+          restaurantId: application.restaurantId,
+          jobTitle: job.title
+        }, job.restaurantId);
+      } catch (workflowError) {
+        console.error('Workflow trigger failed:', workflowError);
+        // Don't fail the application creation if workflow fails
+      }
 
       return {
         success: true,
@@ -200,6 +216,39 @@ export class ApplicationService {
         status,
         reviewNotes
       });
+
+      // Trigger workflow events based on status change
+      try {
+        const workflowEngine = WorkflowEngine.getInstance();
+        let eventType: string = '';
+        
+        switch (status) {
+          case 'ACCEPTED':
+            eventType = 'APPLICATION_ACCEPTED';
+            break;
+          case 'REJECTED':
+            eventType = 'APPLICATION_REJECTED';
+            break;
+          case 'INTERVIEW_SCHEDULED':
+            eventType = 'INTERVIEW_SCHEDULED';
+            break;
+        }
+
+        if (eventType) {
+          await workflowEngine.triggerWorkflow(eventType as any, {
+            applicationId: updatedApplication.id,
+            jobId: updatedApplication.jobId,
+            workerId: updatedApplication.workerId,
+            restaurantId: updatedApplication.restaurantId,
+            newStatus: status,
+            previousStatus: application.status,
+            reviewNotes
+          }, updatedApplication.restaurantId);
+        }
+      } catch (workflowError) {
+        console.error('Workflow trigger failed:', workflowError);
+        // Don't fail the status update if workflow fails
+      }
 
       return {
         success: true,
@@ -433,6 +482,170 @@ export class ApplicationService {
         error: {
           code: 'APPLICATION_STATS_FAILED',
           message: 'Failed to fetch application statistics',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Bulk update application statuses
+   */
+  async bulkUpdateApplications(
+    applicationIds: string[],
+    action: 'accept' | 'reject' | 'interview' | 'archive',
+    employerId: string,
+    notes?: string
+  ): Promise<ServiceResult<{ updatedCount: number; applications: Application[] }>> {
+    try {
+      // Validate input
+      if (!applicationIds || applicationIds.length === 0) {
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_APPLICATION_IDS',
+            message: 'Application IDs are required'
+          }
+        };
+      }
+
+      // Get applications and verify employer can update them
+      const applications = await this.applicationRepository.findByIds(applicationIds);
+      
+      // Verify all applications belong to employer's jobs
+      const unauthorizedApps = applications.filter(app => app.job.employerId !== employerId);
+      if (unauthorizedApps.length > 0) {
+        return {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You are not authorized to update some of these applications'
+          }
+        };
+      }
+
+      // Map action to status
+      let status: ApplicationStatus;
+      switch (action) {
+        case 'accept':
+          status = ApplicationStatus.ACCEPTED;
+          break;
+        case 'reject':
+          status = ApplicationStatus.REJECTED;
+          break;
+        case 'interview':
+          status = ApplicationStatus.UNDER_REVIEW; // or create INTERVIEW_SCHEDULED
+          break;
+        case 'archive':
+          status = ApplicationStatus.REJECTED; // or create ARCHIVED status
+          break;
+        default:
+          return {
+            success: false,
+            error: {
+              code: 'INVALID_ACTION',
+              message: 'Invalid bulk action'
+            }
+          };
+      }
+
+      // Perform bulk update
+      const updatedApplications = await this.applicationRepository.bulkUpdate(
+        applicationIds,
+        { status, reviewNotes: notes }
+      );
+
+      return {
+        success: true,
+        data: {
+          updatedCount: updatedApplications.length,
+          applications: updatedApplications
+        }
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'BULK_UPDATE_FAILED',
+          message: 'Failed to perform bulk update',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Get detailed application with all related data
+   */
+  async getApplicationDetails(applicationId: string, userId: string): Promise<ServiceResult<any>> {
+    try {
+      const application = await this.applicationRepository.findByIdWithDetails(applicationId);
+
+      if (!application) {
+        return {
+          success: false,
+          error: {
+            code: 'APPLICATION_NOT_FOUND',
+            message: 'Application not found'
+          }
+        };
+      }
+
+      // Check if user has permission to view
+      const canView = application.applicantId === userId || application.job.employerId === userId;
+      
+      if (!canView) {
+        return {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You are not authorized to view this application'
+          }
+        };
+      }
+
+      return {
+        success: true,
+        data: application
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'APPLICATION_DETAILS_FAILED',
+          message: 'Failed to fetch application details',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+    }
+  }
+
+  /**
+   * Get comprehensive application statistics for dashboard
+   */
+  async getComprehensiveStats(
+    employerId: string,
+    period: number = 30
+  ): Promise<ServiceResult<any>> {
+    try {
+      const periodDate = new Date();
+      periodDate.setDate(periodDate.getDate() - period);
+
+      const stats = await this.applicationRepository.getComprehensiveStats(employerId, periodDate);
+
+      return {
+        success: true,
+        data: stats
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'COMPREHENSIVE_STATS_FAILED',
+          message: 'Failed to fetch comprehensive statistics',
           details: error instanceof Error ? error.message : 'Unknown error'
         }
       };

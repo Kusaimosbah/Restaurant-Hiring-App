@@ -13,10 +13,12 @@ import {
   UserIcon,
   CalendarIcon,
   ClipboardDocumentCheckIcon,
+  MagnifyingGlassIcon,
   BanknotesIcon,
   BellIcon,
   StarIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline';
 
 export default function Sidebar() {
@@ -106,6 +108,18 @@ export default function Sidebar() {
       href: '/dashboard/payroll',
       icon: BanknotesIcon,
       roles: ['RESTAURANT_OWNER']
+    },
+    {
+      name: 'Integrations',
+      href: '/dashboard/integrations',
+      icon: LinkIcon,
+      roles: ['RESTAURANT_OWNER']
+    },
+    {
+      name: 'Job Matching',
+      href: '/dashboard/matching',
+      icon: MagnifyingGlassIcon,
+      roles: ['RESTAURANT_OWNER', 'WORKER']
     },
     {
       name: 'Notifications',
